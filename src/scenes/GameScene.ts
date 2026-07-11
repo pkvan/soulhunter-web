@@ -4,6 +4,7 @@ import { PoolManager } from "@systems/PoolManager";
 import { SpawnSystem } from "@systems/SpawnSystem";
 import { WeaponSystem } from "@systems/WeaponSystem";
 import { SoulSystem } from "@systems/SoulSystem";
+import { PickupSystem } from "@systems/PickupSystem";
 import { CombatSystem } from "@systems/CombatSystem";
 import { UpgradeSystem } from "@systems/UpgradeSystem";
 import { FusionSystem } from "@systems/FusionSystem";
@@ -53,6 +54,7 @@ export class GameScene extends Phaser.Scene {
   private spawnSystem!: SpawnSystem;
   private weaponSystem!: WeaponSystem;
   private soulSystem!: SoulSystem;
+  private pickupSystem!: PickupSystem;
   private combatSystem!: CombatSystem;
   private fusionSystem!: FusionSystem;
   private upgradeSystem!: UpgradeSystem;
@@ -91,6 +93,7 @@ export class GameScene extends Phaser.Scene {
     this.spawnSystem = new SpawnSystem(this, this.poolManager, this.player, this.activeChallenge?.enemyHpMultiplier ?? 1);
     this.soulSystem = new SoulSystem(this, this.player);
     this.bossSystem = new BossSystem(this, this.player, this.poolManager);
+    this.pickupSystem = new PickupSystem(this, this.poolManager, this.player, this.soulSystem);
     this.weaponSystem = new WeaponSystem(
       this, this.player, this.poolManager, this.soulSystem, this.bossSystem, () => this.registerKill()
     );
@@ -126,6 +129,7 @@ export class GameScene extends Phaser.Scene {
     this.spawnSystem.update(time, delta);
     this.weaponSystem.update(time, delta);
     this.soulSystem.update(delta);
+    this.pickupSystem.update(time, delta);
     this.combatSystem.update(time, delta);
     this.bossSystem.update(time, delta);
     this.hud.update(this.elapsedPlayMs);

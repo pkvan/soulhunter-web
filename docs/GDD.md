@@ -124,3 +124,15 @@ SFX: Attack, Explosion, Boss, Level Up, Game Over. Có BGM nền.
 ```
 
 Fusion nên thêm sau khi core loop (spawn → giết → nhặt Soul → level up → upgrade → boss → chết → coin) đã chạy ổn định, không làm song song từ đầu.
+
+## 18. Pickup ngẫu nhiên
+
+Vật phẩm ngẫu nhiên rơi trên map trong lúc chơi (khác Soul — Soul rơi từ quái chết đều đặn, Pickup là phần thưởng ngẫu nhiên độc lập), tạo thêm biến số/khoảnh khắc bất ngờ giữa trận.
+
+- **Tần suất**: roll xuất hiện khoảng mỗi 15-20 giây, spawn ở vị trí gần player nhưng không đè lên player (trong tầm nhìn, không như Enemy spawn ngoài camera).
+- **Thời gian tồn tại**: tối đa ~10 giây trên map nếu không nhặt, tự biến mất (fade out).
+
+| Loại | Hiệu ứng |
+|---|---|
+| Heal Potion | Hồi ngay một phần trăm Max HP (không vượt quá Max HP) |
+| Magnet Orb | Hút toàn bộ Soul đang có trên map (kể cả ngoài tầm nhìn) bay hội tụ về player — Soul đuổi theo vị trí player realtime (không phải điểm cố định lúc nhặt), tốc độ tăng dần mô phỏng lực hút, tất cả bắt đầu bay cùng lúc nên tự nhiên hội tụ từ nhiều hướng |

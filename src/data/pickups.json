@@ -1,0 +1,4 @@
+[
+  { "id": "heal_potion", "healPercent": 0.25, "color": "0xff4d6d" },
+  { "id": "magnet_orb", "color": "0x60f0e0" }
+]

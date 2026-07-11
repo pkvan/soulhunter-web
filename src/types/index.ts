@@ -39,6 +39,13 @@ export interface EnemyDef {
   movementPattern?: "straight" | "zigzag"; // vd Bat "zigzag" — xem Enemy.update()
 }
 
+/** Pickup ngẫu nhiên (Heal Potion / Magnet Orb) — xem PickupSystem. */
+export interface PickupDef {
+  id: string;
+  color: string; // hex string (vd "0xff4d6d") — Pickup.spawn() dùng Number(color) để setFillStyle
+  healPercent?: number; // chỉ heal_potion — % maxHp hồi lại
+}
+
 export interface BossDef {
   id: string;
   name: string;

@@ -37,6 +37,7 @@ export const GAMEPLAY = {
   DIFFICULTY_RAMP_LATE_GROWTH_RATE: 1.06, // sau mốc tăng tốc, mỗi nấc lại nhân bước tăng thêm 6% — cấp số nhân nhẹ
   MAGNET_BASE_RADIUS: 40,
   ENEMY_PLAYER_COLLISION_RADIUS: 20, // khoảng cách 2 tâm sprite được tính là va chạm
+  PICKUP_COLLECT_RADIUS: 24, // khoảng cách 2 tâm sprite được tính là player nhặt được Pickup (Heal Potion/Magnet Orb)
   ENEMY_HIT_COOLDOWN_MS: 500, // mỗi enemy chỉ gây damage cho player tối đa 1 lần/khoảng thời gian này
   PROJECTILE_HIT_RADIUS: 20, // khoảng cách 2 tâm sprite được tính là projectile trúng enemy
 
