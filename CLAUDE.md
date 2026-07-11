@@ -65,16 +65,20 @@ Toàn bộ nội dung game (danh sách vũ khí, 20 upgrade, 15 công thức fus
 
 ## Trạng thái hiện tại / việc cần làm
 
-Core loop đã chạy được tới hết bước upgrade system. Thứ tự triển khai (bám theo MVP trong GDD):
+**MVP core loop đã hoàn thành.** Thứ tự triển khai (bám theo MVP trong GDD):
 
-- [x] `BootScene` load asset tạm (placeholder sprite) → `GameScene` render player di chuyển bằng WASD
+- [x] `BootScene` load asset tạm (placeholder sprite) → `GameScene` render player di chuyển bằng WASD (mượt, có chuẩn hóa vận tốc chéo + camera lerp)
 - [x] `PoolManager` + `SpawnSystem` spawn quái, Enemy va chạm Player gây damage → Game Over khi HP về 0
-- [x] `WeaponSystem` với Sword (melee) auto-attack
+- [x] `WeaponSystem` với Sword (melee) auto-attack, vòng đánh bám theo player mỗi frame (không lệch khi di chuyển)
 - [x] Đủ 5 vũ khí (Sword/Fireball/Ice Shard/Lightning/Boomerang), mỗi loại có visual placeholder phân biệt màu/hình riêng
+- [x] 5 loại quái phân biệt màu (tint) + hành vi riêng (Ghost né 40% đòn melee, Bat bay zigzag) — riêng phần "phasing xuyên vật cản" theo `flag` còn TODO nhưng chưa cần thiết vì game chưa có obstacle/terrain
 - [x] `SoulSystem` rơi Soul, nhặt, tính EXP, level up trigger event + hiển thị progress bar (Soul/Level) trên HUD
 - [x] `UpgradeSystem` gắn vào `LevelUpScene`: hiện 3 lựa chọn (vũ khí mới / nâng cấp level vũ khí / stat upgrade)
-- [ ] 5 loại quái đã có data trong `enemies.json`, nhưng behavior riêng theo `flag` (ground/phasing/flying) chưa implement
-- [ ] `FusionSystem` — **bước tiếp theo**, chỉ làm sau khi core loop ổn định
-- [ ] Boss, meta progression (Coin, Unlock), âm thanh
+- [x] `FusionSystem` — đủ 15 công thức, mỗi fusion có bảng hành vi riêng (chain lightning, slow/stun, DOT, lifesteal, AoE) trong `fusionWeapons.json`
+- [x] 2 Boss data-driven (`bosses.json` + `bossSkills.json`): Giant Skeleton (Dash/Summon/Ground Slam) và Orc Warlord (Charge/Roar/Ground Slam) — mỗi boss có skill riêng, banner "XUẤT HIỆN" (scale-in + screen shake), HP bar màu riêng trên HUD, chỉ kết thúc ván khi hạ boss cuối cùng
+- [x] Balance đầu game: giảm HP quái/boss để giết nhanh đầu game, spawn rate tăng dần theo `difficultyMultiplier`, độ khó ramp phi tuyến (chậm 5 phút đầu, nhanh dần về cuối)
+- [x] Fix bug boss xuất hiện ngay đầu game: nguyên nhân là timer spawn dùng clock tuyệt đối của Phaser (`scene.time.now`) — clock này có thể nhảy vọt hàng chục giây trong 1 frame nếu tab bị trình duyệt tạm ẩn/throttle, khiến điều kiện thời gian bị thỏa mãn tức thì. Đã đổi sang cộng dồn delta có chặn trần mỗi frame (`elapsedPlayMs`) để đo đúng thời gian chơi thực tế.
+- [ ] **Bước tiếp theo (hậu-MVP, GDD mục 13-15)**: meta progression (Coin, Unlock Character/Weapon, Permanent Upgrade) và Achievement/Daily Challenge
+- [ ] Âm thanh, tilemap/background thật, asset pixel art thay placeholder
 
-Không làm bước sau khi bước trước chưa chạy ổn định — tránh code system phức tạp (fusion, boss AI) trên nền core loop chưa test kỹ.
+Không làm bước sau khi bước trước chưa chạy ổn định — nay core loop đã ổn định, có thể bắt đầu phần hậu-MVP.
