@@ -65,15 +65,16 @@ Toàn bộ nội dung game (danh sách vũ khí, 20 upgrade, 15 công thức fus
 
 ## Trạng thái hiện tại / việc cần làm
 
-Đây là scaffold khởi tạo — các file trong `scenes/`, `entities/`, `systems/` mới chỉ có class rỗng + TODO comment mô tả trách nhiệm. Thứ tự triển khai đề xuất (bám theo MVP trong GDD):
+Core loop đã chạy được tới hết bước upgrade system. Thứ tự triển khai (bám theo MVP trong GDD):
 
-1. `BootScene` load asset tạm (placeholder sprite) → `GameScene` render player di chuyển bằng WASD
-2. `PoolManager` + `SpawnSystem` spawn Slime cơ bản, va chạm gây damage
-3. `WeaponSystem` với Sword (melee) auto-attack
-4. `SoulSystem` rơi Soul, nhặt, tính EXP, level up trigger event
-5. `UpgradeSystem` + `LevelUpScene` hiện 3 lựa chọn từ `upgrades.json`
-6. Thêm 4 vũ khí còn lại + 4 loại quái còn lại
-7. `FusionSystem` — chỉ làm sau khi core loop ổn định
-8. Boss, meta progression (Coin, Unlock), âm thanh
+- [x] `BootScene` load asset tạm (placeholder sprite) → `GameScene` render player di chuyển bằng WASD
+- [x] `PoolManager` + `SpawnSystem` spawn quái, Enemy va chạm Player gây damage → Game Over khi HP về 0
+- [x] `WeaponSystem` với Sword (melee) auto-attack
+- [x] Đủ 5 vũ khí (Sword/Fireball/Ice Shard/Lightning/Boomerang), mỗi loại có visual placeholder phân biệt màu/hình riêng
+- [x] `SoulSystem` rơi Soul, nhặt, tính EXP, level up trigger event + hiển thị progress bar (Soul/Level) trên HUD
+- [x] `UpgradeSystem` gắn vào `LevelUpScene`: hiện 3 lựa chọn (vũ khí mới / nâng cấp level vũ khí / stat upgrade)
+- [ ] 5 loại quái đã có data trong `enemies.json`, nhưng behavior riêng theo `flag` (ground/phasing/flying) chưa implement
+- [ ] `FusionSystem` — **bước tiếp theo**, chỉ làm sau khi core loop ổn định
+- [ ] Boss, meta progression (Coin, Unlock), âm thanh
 
 Không làm bước sau khi bước trước chưa chạy ổn định — tránh code system phức tạp (fusion, boss AI) trên nền core loop chưa test kỹ.
