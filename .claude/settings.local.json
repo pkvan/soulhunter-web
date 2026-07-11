@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I{} echo {})",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(lsof -i :5173 -sTCP:LISTEN -n -P)",
+      "Bash(ps -p 68321 -o pid,command)",
+      "Bash(kill 68321)",
+      "Bash(npm run *)"
+    ]
+  }
+}

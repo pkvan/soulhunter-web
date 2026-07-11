@@ -1,0 +1,17 @@
+[
+  { "id": "thunder_flame", "name": "Thunder Flame", "requires": ["fireball", "lightning"], "effect": "Nổ gây sét lan sang quái gần" },
+  { "id": "frozen_boomerang", "name": "Frozen Boomerang", "requires": ["ice_shard", "boomerang"], "effect": "Boomerang đóng băng đường bay" },
+  { "id": "venom_blade", "name": "Venom Blade", "requires": ["sword", "poison"], "effect": "Chém gây độc theo thời gian" },
+  { "id": "flame_edge", "name": "Flame Edge", "requires": ["sword", "fireball"], "effect": "Chém tạo sóng lửa tầm ngắn" },
+  { "id": "chain_return", "name": "Chain Return", "requires": ["lightning", "boomerang"], "effect": "Boomerang giật điện lan quái khi quay lại" },
+  { "id": "steam_burst", "name": "Steam Burst", "requires": ["ice_shard", "fireball"], "effect": "Xuyên quái + nổ hơi nước gây choáng" },
+  { "id": "frost_blade", "name": "Frost Blade", "requires": ["sword", "ice_shard"], "effect": "Chém có % làm chậm" },
+  { "id": "homing_fireball", "name": "Homing Fireball", "requires": ["fireball", "boomerang"], "effect": "Cầu lửa bay vòng quay lại" },
+  { "id": "static_freeze", "name": "Static Freeze", "requires": ["lightning", "ice_shard"], "effect": "Sét có % đóng băng" },
+  { "id": "storm_slash", "name": "Storm Slash", "requires": ["sword", "lightning"], "effect": "Chém phóng tia sét ngẫu nhiên" },
+  { "id": "ember_blade", "name": "Ember Blade", "requires": ["sword", "burn"], "effect": "Đòn chém để lại vệt lửa trên đất" },
+  { "id": "ice_bomb", "name": "Ice Bomb", "requires": ["fireball", "freeze_chance"], "effect": "Nổ gây đóng băng diện rộng" },
+  { "id": "vampiric_boomerang", "name": "Vampiric Boomerang", "requires": ["boomerang", "life_steal"], "effect": "Hút máu mỗi lần trúng" },
+  { "id": "toxic_frost", "name": "Toxic Frost", "requires": ["ice_shard", "poison"], "effect": "Làm chậm + độc" },
+  { "id": "plasma_bolt", "name": "Plasma Bolt", "requires": ["lightning", "burn"], "effect": "Sét gây thêm cháy lan" }
+]

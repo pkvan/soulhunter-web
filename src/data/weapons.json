@@ -1,0 +1,52 @@
+[
+  {
+    "id": "sword",
+    "name": "Sword",
+    "type": "melee",
+    "baseDamage": 10,
+    "baseCooldownMs": 800,
+    "baseRange": 60,
+    "maxLevel": 8,
+    "description": "Đánh cận chiến hình quạt trước mặt player"
+  },
+  {
+    "id": "fireball",
+    "name": "Fireball",
+    "type": "projectile_straight",
+    "baseDamage": 14,
+    "baseCooldownMs": 1200,
+    "baseSpeed": 220,
+    "maxLevel": 8,
+    "description": "Bay thẳng theo hướng gần nhất, nổ khi trúng"
+  },
+  {
+    "id": "ice_shard",
+    "name": "Ice Shard",
+    "type": "projectile_pierce",
+    "baseDamage": 8,
+    "baseCooldownMs": 1000,
+    "baseSpeed": 260,
+    "pierceCount": 3,
+    "maxLevel": 8,
+    "description": "Xuyên qua nhiều quái trên đường bay"
+  },
+  {
+    "id": "lightning",
+    "name": "Lightning",
+    "type": "random_target",
+    "baseDamage": 18,
+    "baseCooldownMs": 1500,
+    "maxLevel": 8,
+    "description": "Đánh trúng 1 quái ngẫu nhiên trong tầm"
+  },
+  {
+    "id": "boomerang",
+    "name": "Boomerang",
+    "type": "projectile_return",
+    "baseDamage": 12,
+    "baseCooldownMs": 1100,
+    "baseSpeed": 240,
+    "maxLevel": 8,
+    "description": "Bay ra tối đa X khoảng cách rồi quay lại player"
+  }
+]

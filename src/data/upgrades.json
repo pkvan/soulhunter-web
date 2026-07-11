@@ -1,0 +1,22 @@
+[
+  { "id": "damage_up", "name": "Damage +15%", "stat": "damageMultiplier", "value": 0.15, "stackable": true },
+  { "id": "attack_speed_up", "name": "Attack Speed +20%", "stat": "cooldownMultiplier", "value": -0.20, "stackable": true },
+  { "id": "move_speed_up", "name": "Move Speed +10%", "stat": "moveSpeedMultiplier", "value": 0.10, "stackable": true },
+  { "id": "crit_chance", "name": "Critical Chance +8%", "stat": "critChance", "value": 0.08, "stackable": true },
+  { "id": "crit_damage", "name": "Critical Damage +25%", "stat": "critDamageMultiplier", "value": 0.25, "stackable": true },
+  { "id": "projectile_plus", "name": "Projectile +1", "stat": "projectileCount", "value": 1, "stackable": true },
+  { "id": "fireball_size", "name": "Fireball Size +20%", "stat": "fireballSizeMultiplier", "value": 0.20, "stackable": true, "appliesTo": "fireball" },
+  { "id": "sword_range", "name": "Sword Range +15%", "stat": "swordRangeMultiplier", "value": 0.15, "stackable": true, "appliesTo": "sword" },
+  { "id": "freeze_chance", "name": "Freeze Chance +10%", "stat": "freezeChance", "value": 0.10, "stackable": true },
+  { "id": "burn", "name": "Burn on hit", "stat": "burnChance", "value": 0.15, "stackable": true },
+  { "id": "poison", "name": "Poison on hit", "stat": "poisonChance", "value": 0.15, "stackable": true },
+  { "id": "life_steal", "name": "Life Steal +3%", "stat": "lifeStealPercent", "value": 0.03, "stackable": true },
+  { "id": "max_hp", "name": "Max HP +20", "stat": "maxHp", "value": 20, "stackable": true },
+  { "id": "shield", "name": "Shield +1", "stat": "shieldCharges", "value": 1, "stackable": true },
+  { "id": "magnet", "name": "Magnet Range +25%", "stat": "pickupRadiusMultiplier", "value": 0.25, "stackable": true },
+  { "id": "hp_regen", "name": "HP Regen +1/s", "stat": "hpRegenPerSecond", "value": 1, "stackable": true },
+  { "id": "cooldown_reduction", "name": "Cooldown Reduction +5%", "stat": "globalCooldownReduction", "value": 0.05, "stackable": true },
+  { "id": "dodge_chance", "name": "Dodge Chance +5%", "stat": "dodgeChance", "value": 0.05, "stackable": true },
+  { "id": "armor", "name": "Armor +2", "stat": "flatDamageReduction", "value": 2, "stackable": true },
+  { "id": "exp_gain", "name": "Soul Value +10%", "stat": "soulValueMultiplier", "value": 0.10, "stackable": true }
+]

@@ -1,0 +1,7 @@
+[
+  { "id": "slime", "name": "Slime", "hp": 15, "moveSpeed": 60, "damage": 5, "soulValue": 1, "flag": "ground" },
+  { "id": "skeleton", "name": "Skeleton", "hp": 30, "moveSpeed": 80, "damage": 8, "soulValue": 2, "flag": "ground" },
+  { "id": "ghost", "name": "Ghost", "hp": 20, "moveSpeed": 70, "damage": 6, "soulValue": 2, "flag": "phasing" },
+  { "id": "orc", "name": "Orc", "hp": 60, "moveSpeed": 50, "damage": 12, "soulValue": 3, "flag": "ground" },
+  { "id": "bat", "name": "Bat", "hp": 12, "moveSpeed": 140, "damage": 4, "soulValue": 1, "flag": "flying" }
+]

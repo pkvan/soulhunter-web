@@ -1,0 +1,47 @@
+[
+  {
+    "id": "hunter",
+    "name": "Soul Hunter",
+    "baseHp": 100,
+    "baseMoveSpeed": 160,
+    "startingWeapon": "sword",
+    "unlocked": true,
+    "unlockCostCoin": 0
+  },
+  {
+    "id": "knight",
+    "name": "Knight",
+    "baseHp": 140,
+    "baseMoveSpeed": 140,
+    "startingWeapon": "sword",
+    "unlocked": false,
+    "unlockCostCoin": 500
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "baseHp": 80,
+    "baseMoveSpeed": 150,
+    "startingWeapon": "fireball",
+    "unlocked": false,
+    "unlockCostCoin": 500
+  },
+  {
+    "id": "archer",
+    "name": "Archer",
+    "baseHp": 90,
+    "baseMoveSpeed": 170,
+    "startingWeapon": "ice_shard",
+    "unlocked": false,
+    "unlockCostCoin": 750
+  },
+  {
+    "id": "assassin",
+    "name": "Assassin",
+    "baseHp": 75,
+    "baseMoveSpeed": 190,
+    "startingWeapon": "boomerang",
+    "unlocked": false,
+    "unlockCostCoin": 1000
+  }
+]
