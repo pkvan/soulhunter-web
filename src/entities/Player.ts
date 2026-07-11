@@ -64,6 +64,10 @@ export class Player {
     }
   }
 
+  public heal(amount: number): void {
+    this.stats.currentHp = Math.min(this.stats.maxHp, this.stats.currentHp + amount);
+  }
+
   public getProgress(): { level: number; soulCount: number; soulToNextLevel: number } {
     return {
       level: this.level,

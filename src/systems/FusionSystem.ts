@@ -2,10 +2,12 @@ import Phaser from "phaser";
 import { Player } from "@entities/Player";
 import fusionsData from "@data/fusions.json";
 import weaponsData from "@data/weapons.json";
-import { FusionDef, WeaponDef } from "@types/index";
+import upgradesData from "@data/upgrades.json";
+import { FusionDef, WeaponDef, UpgradeDef } from "@types/index";
 
 const fusions = fusionsData as FusionDef[];
 const weapons = weaponsData as WeaponDef[];
+const upgrades = upgradesData as UpgradeDef[];
 
 /**
  * Cơ chế đặc trưng của game (xem docs/GDD.md mục 6). Điều kiện:
@@ -27,10 +29,7 @@ export class FusionSystem {
         const otherId = fusion.requires.find((id) => id !== maxed.weaponId);
         if (!otherId) continue;
 
-        const hasOther = player.equippedWeapons.some((w) => w.weaponId === otherId);
-        // TODO: otherId có thể là stat upgrade (ví dụ "poison", "burn") thay vì weapon —
-        // cần check thêm player.stats[otherId + "Chance"] > 0 cho các công thức weapon+status
-        if (hasOther) candidates.push(fusion);
+        if (this.hasRequirement(player, otherId)) candidates.push(fusion);
       }
     }
 
@@ -38,13 +37,25 @@ export class FusionSystem {
     return Phaser.Utils.Array.GetRandom(candidates);
   }
 
+  /**
+   * 1 vế công thức có thể là weaponId (đã equip) hoặc id của 1 stat upgrade đã nhặt
+   * (vd "poison", "burn", "life_steal", "freeze_chance" trong upgrades.json) — khác weapon,
+   * các stat này không bị "tiêu hao" khi fusion vì chúng là stat chung của player, không phải slot vũ khí.
+   */
+  private hasRequirement(player: Player, id: string): boolean {
+    const isEquippedWeapon = player.equippedWeapons.some((w) => w.weaponId === id);
+    if (isEquippedWeapon) return true;
+
+    const upgradeDef = upgrades.find((u) => u.id === id);
+    if (!upgradeDef) return false;
+    return (player.stats[upgradeDef.stat] ?? 0) > 0;
+  }
+
   applyFusion(player: Player, fusion: FusionDef): void {
-    // Xóa 2 vũ khí gốc, thêm vũ khí fusion mới vào cùng vị trí
+    // Xóa 2 vũ khí gốc (chỉ những vế là weapon thật sự bị tiêu hao; vế là stat upgrade giữ nguyên)
     player.equippedWeapons = player.equippedWeapons.filter(
       (w) => !fusion.requires.includes(w.weaponId)
     );
     player.equippedWeapons.push({ weaponId: fusion.id, level: 1, fusedInto: fusion.id });
-    // TODO: WeaponSystem cần đọc được stat/behaviour của vũ khí fusion —
-    // thêm bảng "fusionWeaponBehaviours" ánh xạ fusion.id -> logic bắn riêng (không dùng chung switch case weapons.json)
   }
 }

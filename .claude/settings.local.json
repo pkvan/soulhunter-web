@@ -6,7 +6,14 @@
       "Bash(lsof -i :5173 -sTCP:LISTEN -n -P)",
       "Bash(ps -p 68321 -o pid,command)",
       "Bash(kill 68321)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git ls-remote *)",
+      "Bash(gh auth *)",
+      "Bash(gh --version)",
+      "Bash(git push *)",
+      "Bash(git config *)",
+      "Bash(git remote *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

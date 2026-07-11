@@ -10,6 +10,18 @@ import { FusionSystem } from "@systems/FusionSystem";
 import { HUD } from "@ui/HUD";
 import { EventBus, GameEvents } from "@utils/EventBus";
 import { GAMEPLAY } from "@config/GameConfig";
+import fusionsData from "@data/fusions.json";
+import weaponsData from "@data/weapons.json";
+import upgradesData from "@data/upgrades.json";
+import { FusionDef, WeaponDef, UpgradeDef } from "@types/index";
+
+// DEBUG TẠM: nhấn phím F để cưỡng bức điều kiện fusion tiếp theo trong fusions.json và hiện ngay
+// LevelUpScene — dùng để test hết 15 công thức mà không cần chơi tới maxLevel từng cái.
+// XÓA khối này (và __debugTriggerNextFusion) sau khi test xong toàn bộ.
+const DEBUG_FUSION_TEST = true;
+const fusions = fusionsData as FusionDef[];
+const weapons = weaponsData as WeaponDef[];
+const upgrades = upgradesData as UpgradeDef[];
 
 interface GameSceneData {
   characterId: string;
@@ -27,6 +39,7 @@ export class GameScene extends Phaser.Scene {
   private hud!: HUD;
   private runStartTime = 0;
   private kills = 0;
+  private debugFusionIndex = -1;
 
   constructor() {
     super("GameScene");
@@ -56,6 +69,10 @@ export class GameScene extends Phaser.Scene {
     EventBus.on(GameEvents.PLAYER_DIED, this.onPlayerDied, this);
 
     this.scene.launch("LevelUpScene"); // chạy song song, LevelUpScene tự lắng nghe EventBus.LEVEL_UP
+
+    if (DEBUG_FUSION_TEST) {
+      this.input.keyboard!.on("keydown-F", () => this.debugTriggerNextFusion());
+    }
 
     // TODO: bắn EventBus.emit(GameEvents.BOSS_SPAWNED) khi this.time.now - this.runStartTime >= GAMEPLAY.BOSS_SPAWN_AT_MS
   }
@@ -95,5 +112,26 @@ export class GameScene extends Phaser.Scene {
 
   public getFusionSystem(): FusionSystem {
     return this.fusionSystem;
+  }
+
+  /** DEBUG TẠM: xem comment ở đầu file. */
+  private debugTriggerNextFusion(): void {
+    this.debugFusionIndex = (this.debugFusionIndex + 1) % fusions.length;
+    const fusion = fusions[this.debugFusionIndex];
+    const [idA, idB] = fusion.requires;
+
+    this.player.equippedWeapons = [];
+    for (const id of [idA, idB]) {
+      const weaponDef = weapons.find((w) => w.id === id);
+      if (weaponDef) {
+        this.player.equippedWeapons.push({ weaponId: id, level: weaponDef.maxLevel });
+      } else {
+        const upgradeDef = upgrades.find((u) => u.id === id);
+        if (upgradeDef) this.player.stats[upgradeDef.stat] = Math.max(this.player.stats[upgradeDef.stat] ?? 0, 0.5);
+      }
+    }
+
+    console.log(`[DEBUG] Testing fusion ${this.debugFusionIndex + 1}/${fusions.length}: ${fusion.name} (${fusion.id})`);
+    EventBus.emit(GameEvents.LEVEL_UP, this.player.getProgress().level);
   }
 }

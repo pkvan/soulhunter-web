@@ -19,6 +19,7 @@ export class Projectile {
   public active = false;
   public damage = 0;
   public pierceRemaining = 0;
+  public weaponId = ""; // để WeaponSystem tra lại WeaponDef (kể cả vũ khí fusion) khi xử lý on-hit effect
   private weaponType: WeaponDef["type"] = "projectile_straight";
   private speed = 200;
   private returning = false;
@@ -38,6 +39,7 @@ export class Projectile {
     this.originX = x;
     this.originY = y;
     this.damage = damage;
+    this.weaponId = weapon.id;
     this.weaponType = weapon.type;
     this.pierceRemaining = (weapon.pierceCount as number) ?? 0;
     this.speed = (weapon.baseSpeed as number) ?? 200;

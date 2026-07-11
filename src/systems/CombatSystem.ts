@@ -16,7 +16,7 @@ export class CombatSystem {
 
   update(time: number, delta: number): void {
     for (const enemy of this.poolManager.getAllActiveEnemies()) {
-      enemy.update(this.player.sprite.x, this.player.sprite.y, delta);
+      enemy.update(this.player.sprite.x, this.player.sprite.y, time, delta);
 
       const dist = Phaser.Math.Distance.Between(
         enemy.sprite.x, enemy.sprite.y,
