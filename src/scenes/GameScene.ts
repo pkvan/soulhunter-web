@@ -14,8 +14,10 @@ import fusionsData from "@data/fusions.json";
 import weaponsData from "@data/weapons.json";
 import upgradesData from "@data/upgrades.json";
 import bossesData from "@data/bosses.json";
-import { FusionDef, WeaponDef, UpgradeDef, BossDef } from "@types/index";
+import dailyChallengesData from "@data/dailyChallenges.json";
+import { FusionDef, WeaponDef, UpgradeDef, BossDef, DailyChallengeDef } from "@types/index";
 import { calculateCoinEarned } from "@utils/CoinFormula";
+import { hasClaimedDailyChallengeToday, markDailyChallengeClaimedToday } from "@utils/SaveData";
 
 // DEBUG TẠM: nhấn phím F để cưỡng bức điều kiện fusion tiếp theo trong fusions.json và hiện ngay
 // LevelUpScene — dùng để test hết 15 công thức mà không cần chơi tới maxLevel từng cái.
@@ -25,6 +27,7 @@ const fusions = fusionsData as FusionDef[];
 const weapons = weaponsData as WeaponDef[];
 const upgrades = upgradesData as UpgradeDef[];
 const bosses = bossesData as BossDef[];
+const dailyChallenges = dailyChallengesData as DailyChallengeDef[];
 
 // DEBUG TẠM THỜI: thay cho GAMEPLAY.BOSS_SPAWN_AT_MS thật (mặc định 5-10 phút) để test nhanh 2 boss
 // mà không phải đợi lâu. Boss 1 (Giant Skeleton, bosses.json[0]) spawn ở mốc này; Boss 2 (Orc Warlord,
@@ -41,6 +44,7 @@ const MAX_FRAME_DELTA_MS = 100;
 
 interface GameSceneData {
   characterId: string;
+  dailyChallengeId?: string; // nếu có, ván này chạy dưới modifier Daily Challenge (xem MenuScene + GAMEPLAY GDD mục 15)
 }
 
 export class GameScene extends Phaser.Scene {
@@ -62,6 +66,7 @@ export class GameScene extends Phaser.Scene {
   private highestCombo = 0;
   private lastKillAtMs = -Infinity;
   private readonly COMBO_RESET_MS = 2000; // không giết thêm trong khoảng này thì lần giết tiếp theo reset combo về 1
+  private activeChallenge?: DailyChallengeDef;
 
   constructor() {
     super("GameScene");
@@ -77,9 +82,13 @@ export class GameScene extends Phaser.Scene {
 
     // TODO: khởi tạo tilemap/background Forest lặp lại theo camera (map vô tận)
 
-    this.player = new Player(this, 480, 270, data.characterId ?? "hunter");
+    this.activeChallenge = data.dailyChallengeId
+      ? dailyChallenges.find((c) => c.id === data.dailyChallengeId)
+      : undefined;
+
+    this.player = new Player(this, 480, 270, data.characterId ?? "hunter", this.activeChallenge?.playerDamageMultiplier ?? 1);
     this.poolManager = new PoolManager(this);
-    this.spawnSystem = new SpawnSystem(this, this.poolManager, this.player);
+    this.spawnSystem = new SpawnSystem(this, this.poolManager, this.player, this.activeChallenge?.enemyHpMultiplier ?? 1);
     this.soulSystem = new SoulSystem(this, this.player);
     this.bossSystem = new BossSystem(this, this.player, this.poolManager);
     this.weaponSystem = new WeaponSystem(
@@ -141,7 +150,7 @@ export class GameScene extends Phaser.Scene {
     this.scene.start("GameOverScene", {
       survivalTimeMs,
       kills: this.kills,
-      coinEarned: calculateCoinEarned(this.kills, survivalTimeMs, false),
+      coinEarned: this.computeCoinEarned(false),
       highestCombo: this.highestCombo,
       victory: false
     });
@@ -158,10 +167,24 @@ export class GameScene extends Phaser.Scene {
     this.scene.start("GameOverScene", {
       survivalTimeMs,
       kills: this.kills,
-      coinEarned: calculateCoinEarned(this.kills, survivalTimeMs, true),
+      coinEarned: this.computeCoinEarned(true),
       highestCombo: this.highestCombo,
       victory: true
     });
+  }
+
+  /**
+   * Coin cuối ván — nếu đang chơi Daily Challenge VÀ chưa nhận thưởng nhân hệ số hôm nay thì áp dụng
+   * coinRewardMultiplier rồi đánh dấu đã nhận (GDD mục 15: chơi lại thoải mái trong ngày nhưng chỉ tính
+   * thưởng nhân hệ số 1 lần/ngày, tránh farm Coin bằng cách chơi Daily Challenge liên tục).
+   */
+  private computeCoinEarned(victory: boolean): number {
+    if (this.activeChallenge && !hasClaimedDailyChallengeToday()) {
+      const coinEarned = calculateCoinEarned(this.kills, this.elapsedPlayMs, victory, this.activeChallenge.coinRewardMultiplier);
+      markDailyChallengeClaimedToday();
+      return coinEarned;
+    }
+    return calculateCoinEarned(this.kills, this.elapsedPlayMs, victory);
   }
 
   public registerKill(): void {

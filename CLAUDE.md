@@ -78,7 +78,11 @@ Toàn bộ nội dung game (danh sách vũ khí, 20 upgrade, 15 công thức fus
 - [x] 2 Boss data-driven (`bosses.json` + `bossSkills.json`): Giant Skeleton (Dash/Summon/Ground Slam) và Orc Warlord (Charge/Roar/Ground Slam) — mỗi boss có skill riêng, banner "XUẤT HIỆN" (scale-in + screen shake), HP bar màu riêng trên HUD, chỉ kết thúc ván khi hạ boss cuối cùng
 - [x] Balance đầu game: giảm HP quái/boss để giết nhanh đầu game, spawn rate tăng dần theo `difficultyMultiplier`, độ khó ramp phi tuyến (chậm 5 phút đầu, nhanh dần về cuối)
 - [x] Fix bug boss xuất hiện ngay đầu game: nguyên nhân là timer spawn dùng clock tuyệt đối của Phaser (`scene.time.now`) — clock này có thể nhảy vọt hàng chục giây trong 1 frame nếu tab bị trình duyệt tạm ẩn/throttle, khiến điều kiện thời gian bị thỏa mãn tức thì. Đã đổi sang cộng dồn delta có chặn trần mỗi frame (`elapsedPlayMs`) để đo đúng thời gian chơi thực tế.
-- [ ] **Bước tiếp theo (hậu-MVP, GDD mục 13-15)**: meta progression (Coin, Unlock Character/Weapon, Permanent Upgrade) và Achievement/Daily Challenge
-- [ ] Âm thanh, tilemap/background thật, asset pixel art thay placeholder
+- [x] **Meta progression giai đoạn 1 (GDD mục 13)**: hệ thống Coin hoàn chỉnh — track Highest Combo trong ván (`GameScene`), công thức tính Coin cuối ván tách riêng (`utils/CoinFormula.ts`), `GameOverScene` hiển thị đầy đủ Survival/Kills/Highest Combo/Coin theo format GDD mục 12, cộng dồn Coin vào `localStorage` (`utils/SaveData.ts`)
+- [x] `UnlockScene` mới: tab Nhân vật (đọc `characters.json`, mở khóa bằng Coin, chọn nhân vật dùng cho ván tiếp theo) + tab Permanent Upgrade (+2% Damage / +5 HP / +1% Critical, mua nhiều lần giá tăng dần, đọc/ghi `permanentUpgrades.json`) — `MenuScene` đọc nhân vật đã chọn và Permanent Upgrade đã mua được cộng vào stat gốc của Player mỗi ván lúc khởi tạo
+- [x] Persistent qua `localStorage` cho Coin tích lũy, nhân vật đã unlock, nhân vật đang chọn, số lần mua từng Permanent Upgrade (xem `utils/SaveData.ts`)
+- [ ] **Bước tiếp theo (hậu-MVP, GDD mục 15)**: Achievement (giết 100/1000/10000 quái), Daily Challenge (vd Enemy HP x2 → Damage x2 → Coin x3)
+- [ ] Weapon unlock riêng bằng Coin — hiện tại cả 5 vũ khí (Sword/Fireball/Ice Shard/Lightning/Boomerang) mở sẵn từ đầu theo phạm vi MVP, chưa gate qua Coin
+- [ ] Âm thanh (SFX đánh/trúng đòn/level up + BGM), tilemap/background thật, asset pixel art thay placeholder màu hiện tại
 
-Không làm bước sau khi bước trước chưa chạy ổn định — nay core loop đã ổn định, có thể bắt đầu phần hậu-MVP.
+Không làm bước sau khi bước trước chưa chạy ổn định — MVP + meta progression giai đoạn 1 (Coin/Unlock Character/Permanent Upgrade) đã ổn định, có thể tiếp tục Achievement/Daily Challenge hoặc Weapon unlock.

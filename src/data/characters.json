@@ -15,7 +15,7 @@
     "baseMoveSpeed": 140,
     "startingWeapon": "sword",
     "unlocked": false,
-    "unlockCostCoin": 500
+    "unlockCostCoin": 10
   },
   {
     "id": "mage",
@@ -24,7 +24,7 @@
     "baseMoveSpeed": 150,
     "startingWeapon": "fireball",
     "unlocked": false,
-    "unlockCostCoin": 500
+    "unlockCostCoin": 20
   },
   {
     "id": "archer",
@@ -33,7 +33,7 @@
     "baseMoveSpeed": 170,
     "startingWeapon": "ice_shard",
     "unlocked": false,
-    "unlockCostCoin": 750
+    "unlockCostCoin": 30
   },
   {
     "id": "assassin",
@@ -42,6 +42,6 @@
     "baseMoveSpeed": 190,
     "startingWeapon": "boomerang",
     "unlocked": false,
-    "unlockCostCoin": 1000
+    "unlockCostCoin": 40
   }
 ]

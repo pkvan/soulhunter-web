@@ -27,7 +27,8 @@ export class SpawnSystem {
   constructor(
     private scene: Phaser.Scene,
     private poolManager: PoolManager,
-    private player: Player
+    private player: Player,
+    private enemyHpMultiplier = 1 // Daily Challenge modifier (xem GameScene) — mặc định 1 khi chơi ván thường
   ) {}
 
   update(time: number, _delta: number): void {
@@ -57,7 +58,7 @@ export class SpawnSystem {
 
     const def = this.pickEnemyDef();
     const { x, y } = this.getSpawnPositionOutsideCamera();
-    enemy.spawn(x, y, def, this.difficultyMultiplier);
+    enemy.spawn(x, y, def, this.difficultyMultiplier * this.enemyHpMultiplier);
   }
 
   private pickEnemyDef(): EnemyDef {

@@ -114,6 +114,24 @@ export interface RunResult {
   victory?: boolean; // true khi hạ được Boss, false/undefined = Game Over thường (HP về 0)
 }
 
+/** Mốc giết quái tích lũy qua nhiều ván (GDD mục 15) — thưởng Coin 1 lần khi đạt mốc. */
+export interface AchievementDef {
+  id: string;
+  name: string;
+  killThreshold: number;
+  rewardCoin: number;
+}
+
+/** Modifier Daily Challenge (GDD mục 15) — chọn cố định theo ngày, khó hơn nhưng đổi lại nhiều Coin hơn. */
+export interface DailyChallengeDef {
+  id: string;
+  name: string;
+  description: string;
+  enemyHpMultiplier: number;
+  playerDamageMultiplier: number;
+  coinRewardMultiplier: number;
+}
+
 /** 1 trong 3 lựa chọn khi level up: fusion (2 vũ khí gốc -> 1 vũ khí mới, xem FusionSystem). */
 export interface FusionChoice {
   fusion: true;

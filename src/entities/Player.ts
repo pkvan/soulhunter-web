@@ -23,7 +23,13 @@ export class Player {
     D: Phaser.Input.Keyboard.Key;
   };
 
-  constructor(private scene: Phaser.Scene, x: number, y: number, characterId: string) {
+  constructor(
+    private scene: Phaser.Scene,
+    x: number,
+    y: number,
+    characterId: string,
+    extraDamageMultiplier = 1 // Daily Challenge modifier (xem GameScene) — mặc định 1 khi chơi ván thường
+  ) {
     const def = characters.find((c) => c.id === characterId) ?? characters[0];
 
     // TODO: thay "player_placeholder" bằng texture key thật sau khi có asset
@@ -50,6 +56,7 @@ export class Player {
       const count = getPermanentUpgradeCount(upgradeDef.id);
       if (count > 0) this.stats[upgradeDef.stat] += upgradeDef.value * count;
     }
+    this.stats.damageMultiplier *= extraDamageMultiplier;
     this.stats.currentHp = this.stats.maxHp;
 
     this.equippedWeapons.push({ weaponId: def.startingWeapon, level: 1 });

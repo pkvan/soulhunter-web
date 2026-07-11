@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { RunResult } from "@types/index";
-import { addCoin } from "@utils/SaveData";
+import { addCoin, addTotalKills, checkAndClaimNewAchievements, getTotalCoin } from "@utils/SaveData";
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -10,7 +10,10 @@ export class GameOverScene extends Phaser.Scene {
   create(data: RunResult): void {
     const mm = Math.floor(data.survivalTimeMs / 60000);
     const ss = Math.floor((data.survivalTimeMs % 60000) / 1000);
-    const totalCoin = addCoin(data.coinEarned); // cộng dồn Coin ván này vào tổng đã lưu (localStorage)
+    addCoin(data.coinEarned); // cộng dồn Coin ván này vào tổng đã lưu (localStorage)
+    const totalKills = addTotalKills(data.kills); // cộng dồn vào tổng số quái đã giết MỌI ván, dùng cho Achievement
+    const newAchievements = checkAndClaimNewAchievements(totalKills); // tự cộng thêm rewardCoin nếu vừa đạt mốc mới
+    const totalCoin = getTotalCoin(); // đọc lại sau khi achievement (nếu có) đã cộng thêm Coin
 
     const title = data.victory ? "BẠN ĐÃ THẮNG!" : "GAME OVER";
     const titleColor = data.victory ? "#4ade80" : "#ef4444";
@@ -33,13 +36,24 @@ export class GameOverScene extends Phaser.Scene {
       this.add.text(420, y, value, { fontSize: "18px", color: "#ffffff", fontStyle: "bold" }).setOrigin(0, 0.5);
     }
 
-    this.add.text(480, startY + rows.length * rowHeight + 16, `Tổng Coin: ${totalCoin}`, {
+    let nextY = startY + rows.length * rowHeight + 16;
+    this.add.text(480, nextY, `Tổng Coin: ${totalCoin}`, {
       fontSize: "20px",
       color: "#fbbf24",
       fontStyle: "bold"
     }).setOrigin(0.5);
+    nextY += 34;
 
-    this.add.text(480, startY + rows.length * rowHeight + 60, "[click để chơi lại]", {
+    for (const achievement of newAchievements) {
+      this.add.text(480, nextY, `🏆 Achievement Unlocked: ${achievement.name} (+${achievement.rewardCoin} Coin)`, {
+        fontSize: "15px",
+        color: "#4ade80",
+        fontStyle: "bold"
+      }).setOrigin(0.5);
+      nextY += 26;
+    }
+
+    this.add.text(480, nextY + 30, "[click để chơi lại]", {
       fontSize: "16px",
       color: "#9ca3af"
     }).setOrigin(0.5);

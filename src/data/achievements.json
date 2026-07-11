@@ -1,0 +1,5 @@
+[
+  { "id": "kills_10", "name": "Thợ Săn Tập Sự", "killThreshold": 10, "rewardCoin": 20 },
+  { "id": "kills_50", "name": "Thợ Săn Kinh Nghiệm", "killThreshold": 50, "rewardCoin": 50 },
+  { "id": "kills_100", "name": "Thợ Săn Huyền Thoại", "killThreshold": 100, "rewardCoin": 100 }
+]

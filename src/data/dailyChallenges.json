@@ -1,0 +1,26 @@
+[
+  {
+    "id": "double_trouble",
+    "name": "Song Trùng Nguy Hiểm",
+    "description": "Quái HP x2, Damage của bạn x2, Coin x3",
+    "enemyHpMultiplier": 2,
+    "playerDamageMultiplier": 2,
+    "coinRewardMultiplier": 3
+  },
+  {
+    "id": "glass_cannon",
+    "name": "Pháo Hoa Thủy Tinh",
+    "description": "Quái HP x1.5, Damage của bạn x3, Coin x2",
+    "enemyHpMultiplier": 1.5,
+    "playerDamageMultiplier": 3,
+    "coinRewardMultiplier": 2
+  },
+  {
+    "id": "iron_horde",
+    "name": "Đội Quân Sắt",
+    "description": "Quái HP x3, Damage của bạn x1.5, Coin x4",
+    "enemyHpMultiplier": 3,
+    "playerDamageMultiplier": 1.5,
+    "coinRewardMultiplier": 4
+  }
+]
