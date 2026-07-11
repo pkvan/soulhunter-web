@@ -24,7 +24,7 @@ export class BootScene extends Phaser.Scene {
     graphics.generateTexture("player_placeholder", 32, 32);
     graphics.clear();
 
-    graphics.fillStyle(0xef4444, 1); // enemy: đỏ
+    graphics.fillStyle(0xffffff, 1); // enemy: trắng thuần — để Enemy.spawn() setTint() theo def.tintColor ra đúng màu (tint nhân màu với texture)
     graphics.fillRect(0, 0, 32, 32);
     graphics.generateTexture("enemy_placeholder", 32, 32);
     graphics.clear();
@@ -53,6 +53,11 @@ export class BootScene extends Phaser.Scene {
     graphics.fillStyle(0xc98a3b, 1); // boomerang: vàng/nâu gỗ, hình chữ nhật (tự xoay khi bay)
     graphics.fillRect(0, 0, 16, 6);
     graphics.generateTexture("projectile_boomerang", 16, 6);
+    graphics.clear();
+
+    graphics.fillStyle(0xffffff, 1); // boss: trắng thuần, to hơn hẳn enemy thường — Boss.ts setTint() theo bosses.json ra đúng màu riêng từng loại
+    graphics.fillRect(0, 0, 64, 64);
+    graphics.generateTexture("boss_placeholder", 64, 64);
 
     graphics.destroy();
   }

@@ -28,7 +28,7 @@ export class CombatSystem {
         time - enemy.lastHitPlayerAt >= GAMEPLAY.ENEMY_HIT_COOLDOWN_MS
       ) {
         enemy.lastHitPlayerAt = time;
-        this.player.takeDamage(enemy.def.damage);
+        this.player.takeDamage(enemy.getCurrentDamage(time)); // tính cả buff Roar từ Boss (nếu đang active)
       }
     }
   }

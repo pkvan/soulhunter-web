@@ -1,0 +1,18 @@
+[
+  {
+    "id": "giant_skeleton",
+    "name": "Giant Skeleton",
+    "color": "0xd1d5db",
+    "hp": 1400,
+    "moveSpeed": 40,
+    "skillIds": ["dash", "summon", "ground_slam"]
+  },
+  {
+    "id": "orc_warlord",
+    "name": "Orc Warlord",
+    "color": "0x7f1d1d",
+    "hp": 2100,
+    "moveSpeed": 40,
+    "skillIds": ["charge", "roar", "ground_slam"]
+  }
+]

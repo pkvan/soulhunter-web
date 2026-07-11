@@ -1,8 +1,10 @@
 import Phaser from "phaser";
 import { Player } from "@entities/Player";
 import { Enemy } from "@entities/Enemy";
+import { Boss } from "@entities/Boss";
 import { PoolManager } from "@systems/PoolManager";
 import { SoulSystem } from "@systems/SoulSystem";
+import { BossSystem } from "@systems/BossSystem";
 import { showDamageNumber } from "@ui/DamageNumber";
 import weaponsData from "@data/weapons.json";
 import fusionWeaponsData from "@data/fusionWeapons.json";
@@ -30,6 +32,7 @@ export class WeaponSystem {
     private player: Player,
     private poolManager: PoolManager,
     private soulSystem: SoulSystem,
+    private bossSystem: BossSystem,
     private onEnemyKilled: () => void
   ) {}
 
@@ -68,46 +71,79 @@ export class WeaponSystem {
           );
           if (dist > range) continue;
 
+          const dodgeChance = enemy.def.meleeDodgeChance ?? 0;
+          if (dodgeChance > 0 && Phaser.Math.FloatBetween(0, 1) < dodgeChance) continue; // né đòn melee (vd Ghost)
+
           this.applyDamage(enemy, damage);
           hitEnemies.push(enemy);
         }
         for (const enemy of hitEnemies) {
           this.applyOnHitEffects(enemy, def, damage, time, hitEnemies);
         }
+
+        const boss = this.bossSystem.getBoss();
+        if (boss) {
+          const distBoss = Phaser.Math.Distance.Between(
+            this.player.sprite.x, this.player.sprite.y,
+            boss.sprite.x, boss.sprite.y
+          );
+          if (distBoss <= range) this.applyDamageToBoss(boss, damage);
+        }
         break;
       }
       case "projectile_straight":
       case "projectile_pierce":
       case "projectile_return": {
-        const target = this.findNearestEnemy();
+        const target = this.findNearestTarget();
         if (!target) break;
         const projectile = this.poolManager.getProjectile();
         if (!projectile) break;
         const angle = Phaser.Math.Angle.Between(
           this.player.sprite.x, this.player.sprite.y,
-          target.sprite.x, target.sprite.y
+          target.x, target.y
         );
         projectile.fire(this.player.sprite.x, this.player.sprite.y, angle, def, damage);
         break;
       }
       case "random_target": {
-        const enemies = this.poolManager.getAllActiveEnemies();
-        if (enemies.length === 0) break;
+        const boss = this.bossSystem.getBoss();
+        const pool: Array<Enemy | Boss> = boss
+          ? [...this.poolManager.getAllActiveEnemies(), boss]
+          : this.poolManager.getAllActiveEnemies();
+        if (pool.length === 0) break;
 
-        const target = Phaser.Utils.Array.GetRandom(enemies);
-        this.applyDamage(target, damage);
+        const target = Phaser.Utils.Array.GetRandom(pool);
         this.drawLightningEffect(target.sprite.x, target.sprite.y);
-        this.applyOnHitEffects(target, def, damage, time, [target]);
+        if (target instanceof Boss) {
+          this.applyDamageToBoss(target, damage); // chưa áp on-hit effect (chain/dot/slow) lên boss ở MVP
+        } else {
+          this.applyDamage(target, damage);
+          this.applyOnHitEffects(target, def, damage, time, [target]);
+        }
         break;
       }
     }
   }
 
-  /** Duyệt projectile đang active mỗi frame: di chuyển (return/despawn) + kiểm tra va chạm enemy. */
+  /** Duyệt projectile đang active mỗi frame: di chuyển (return/despawn) + kiểm tra va chạm enemy/boss. */
   private updateProjectiles(time: number): void {
+    const boss = this.bossSystem.getBoss();
+
     for (const projectile of this.poolManager.getAllActiveProjectiles()) {
       projectile.update(this.player.sprite.x, this.player.sprite.y);
       if (!projectile.active) continue;
+
+      if (boss && !projectile.hasHit(boss)) {
+        const distBoss = Phaser.Math.Distance.Between(
+          projectile.sprite.x, projectile.sprite.y,
+          boss.sprite.x, boss.sprite.y
+        );
+        if (distBoss <= GAMEPLAY.PROJECTILE_HIT_RADIUS) {
+          this.applyDamageToBoss(boss, projectile.damage);
+          projectile.registerHit(boss);
+        }
+      }
+      if (!projectile.active) continue; // có thể đã despawn (straight/pierce) ngay sau khi trúng boss
 
       for (const enemy of this.poolManager.getAllActiveEnemies()) {
         if (projectile.hasHit(enemy)) continue;
@@ -214,16 +250,29 @@ export class WeaponSystem {
     }
   }
 
+  /** Boss không đi qua PoolManager (chỉ 1 instance) nên tách riêng khỏi applyDamage — BossSystem tự xử lý chết/BOSS_DEFEATED. */
+  private applyDamageToBoss(boss: Boss, damage: number): void {
+    showDamageNumber(this.scene, boss.sprite.x, boss.sprite.y, damage);
+    this.bossSystem.applyDamageToBoss(damage);
+  }
+
   /** Vòng tròn lóe lên tại bán kính đánh melee, fade out sau ~150ms. Màu mặc định trắng/bạc (Sword), vũ khí fusion melee dùng màu riêng. */
   private drawSwordSlash(range: number, color = 0xf5f5f5): void {
     const graphics = this.scene.add.graphics();
-    graphics.lineStyle(3, color, 0.9);
-    graphics.strokeCircle(this.player.sprite.x, this.player.sprite.y, range);
+    // Vẽ lại theo vị trí player MỖI FRAME suốt lúc hiệu ứng còn hiển thị (onUpdate) — nếu chỉ vẽ 1 lần lúc tạo,
+    // vòng đánh sẽ bị lệch khỏi player khi player di chuyển trong 150ms hiệu ứng đang fade.
+    const redraw = () => {
+      graphics.clear();
+      graphics.lineStyle(3, color, 0.9);
+      graphics.strokeCircle(this.player.sprite.x, this.player.sprite.y, range);
+    };
+    redraw();
 
     this.scene.tweens.add({
       targets: graphics,
       alpha: 0,
       duration: 150,
+      onUpdate: redraw,
       onComplete: () => graphics.destroy()
     });
   }
@@ -247,6 +296,18 @@ export class WeaponSystem {
 
   private findNearestEnemy(): Enemy | null {
     return this.findNearestEnemyExcluding(this.player.sprite.x, this.player.sprite.y, Infinity, []);
+  }
+
+  /** Mục tiêu cho projectile: enemy gần nhất hoặc boss, tùy cái nào gần player hơn (dùng để hướng bắn). */
+  private findNearestTarget(): { x: number; y: number } | null {
+    const nearestEnemy = this.findNearestEnemy();
+    const boss = this.bossSystem.getBoss();
+    if (!boss) return nearestEnemy?.sprite ?? null;
+    if (!nearestEnemy) return boss.sprite;
+
+    const dEnemy = Phaser.Math.Distance.Between(this.player.sprite.x, this.player.sprite.y, nearestEnemy.sprite.x, nearestEnemy.sprite.y);
+    const dBoss = Phaser.Math.Distance.Between(this.player.sprite.x, this.player.sprite.y, boss.sprite.x, boss.sprite.y);
+    return dBoss < dEnemy ? boss.sprite : nearestEnemy.sprite;
   }
 
   private findNearestEnemyExcluding(x: number, y: number, maxDist: number, exclude: Enemy[]): Enemy | null {

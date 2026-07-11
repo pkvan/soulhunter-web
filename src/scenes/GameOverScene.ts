@@ -14,7 +14,12 @@ export class GameOverScene extends Phaser.Scene {
     const mm = Math.floor(data.survivalTimeMs / 60000);
     const ss = Math.floor((data.survivalTimeMs % 60000) / 1000);
 
-    this.add.text(480, 200,
+    const title = data.victory ? "BẠN ĐÃ THẮNG!" : "GAME OVER";
+    const titleColor = data.victory ? "#4ade80" : "#ef4444";
+
+    this.add.text(480, 140, title, { fontSize: "32px", color: titleColor, fontStyle: "bold" }).setOrigin(0.5);
+
+    this.add.text(480, 220,
       `Survival: ${mm}:${ss.toString().padStart(2, "0")}\nKills: ${data.kills}\nCoin: ${data.coinEarned}\nHighest Combo: ${data.highestCombo}\n\n[click để chơi lại]`,
       { fontSize: "20px", color: "#ffffff", align: "center" }
     ).setOrigin(0.5);

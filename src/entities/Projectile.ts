@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 import { Enemy } from "@entities/Enemy";
+import { Boss } from "@entities/Boss";
 import { WeaponDef } from "@types/index";
+
+type Target = Enemy | Boss;
 
 // Texture placeholder riêng theo từng vũ khí để phân biệt bằng mắt — xem BootScene.generatePlaceholderTextures()
 const PROJECTILE_TEXTURES: Record<string, string> = {
@@ -28,7 +31,7 @@ export class Projectile {
   private readonly maxDistance = 300; // boomerang: khoảng cách bay ra tối đa trước khi quay lại
   private readonly maxTravelDistance = 500; // fireball/ice shard: tự despawn nếu bay quá xa mà không trúng gì
   private readonly returnDespawnRadius = 20;
-  private hitEnemies: Set<Enemy> = new Set();
+  private hitEnemies: Set<Target> = new Set(); // dùng chung cho Enemy thường lẫn Boss (xem entities/Boss.ts)
 
   constructor(private scene: Phaser.Scene) {
     this.sprite = scene.physics.add.sprite(-1000, -1000, "projectile_placeholder");
@@ -54,13 +57,13 @@ export class Projectile {
     this.sprite.setVelocity(Math.cos(angleRad) * this.speed, Math.sin(angleRad) * this.speed);
   }
 
-  hasHit(enemy: Enemy): boolean {
-    return this.hitEnemies.has(enemy);
+  hasHit(target: Target): boolean {
+    return this.hitEnemies.has(target);
   }
 
-  /** Gọi khi projectile va chạm 1 enemy — quyết định có despawn/giảm pierce hay không tùy loại vũ khí. */
-  registerHit(enemy: Enemy): void {
-    this.hitEnemies.add(enemy);
+  /** Gọi khi projectile va chạm 1 enemy/boss — quyết định có despawn/giảm pierce hay không tùy loại vũ khí. */
+  registerHit(target: Target): void {
+    this.hitEnemies.add(target);
 
     if (this.weaponType === "projectile_pierce") {
       this.pierceRemaining -= 1;

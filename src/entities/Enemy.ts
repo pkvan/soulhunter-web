@@ -21,6 +21,14 @@ export class Enemy {
   public dotUntil = 0;
   public nextDotTickAt = 0;
 
+  // Buff tạm thời từ Boss Roar (xem BossSystem.applyRoarBuff) — dùng chung 1 durationMs cho cả 2 stat.
+  public speedBuffMultiplier = 1;
+  public damageBuffMultiplier = 1;
+  public buffUntil = 0;
+
+  // Lệch pha ngẫu nhiên cho di chuyển zigzag (vd Bat) để nhiều con cùng loại không lắc đồng bộ — xem update().
+  private zigzagPhase = 0;
+
   constructor(private scene: Phaser.Scene) {
     // TODO: texture key placeholder, đổi theo def.id khi có sprite thật
     this.sprite = scene.physics.add.sprite(-1000, -1000, "enemy_placeholder");
@@ -40,6 +48,15 @@ export class Enemy {
     this.dotTickIntervalMs = 0;
     this.dotUntil = 0;
     this.nextDotTickAt = 0;
+    this.speedBuffMultiplier = 1;
+    this.damageBuffMultiplier = 1;
+    this.buffUntil = 0;
+    this.zigzagPhase = Phaser.Math.FloatBetween(0, Math.PI * 2);
+
+    // Placeholder màu theo loại quái (xem enemies.json) — texture enemy_placeholder là trắng thuần nên tint ra đúng màu.
+    if (def.tintColor !== undefined) this.sprite.setTint(Number(def.tintColor));
+    else this.sprite.clearTint();
+    this.sprite.setAlpha(def.alpha ?? 1);
     // TODO: nếu def.flag === "phasing" (Ghost) -> tắt collision với vật cản, giữ collision với player/projectile
   }
 
@@ -70,13 +87,37 @@ export class Enemy {
     this.nextDotTickAt = time + tickIntervalMs;
   }
 
+  /** Gắn buff tạm thời từ Boss Roar — speedMultiplier/damageMultiplier vd 1.3 = +30%. */
+  applyBuff(speedMultiplier: number, damageMultiplier: number, durationMs: number, time: number): void {
+    this.speedBuffMultiplier = speedMultiplier;
+    this.damageBuffMultiplier = damageMultiplier;
+    this.buffUntil = time + durationMs;
+  }
+
+  /** Damage va chạm hiện tại (đã tính buff Roar nếu đang active) — CombatSystem dùng thay vì đọc def.damage trực tiếp. */
+  getCurrentDamage(time: number): number {
+    return this.def.damage * (time < this.buffUntil ? this.damageBuffMultiplier : 1);
+  }
+
   update(targetX: number, targetY: number, time: number, _delta: number): void {
     if (!this.active) return;
     const angle = Phaser.Math.Angle.Between(this.sprite.x, this.sprite.y, targetX, targetY);
     const slowMultiplier = time < this.slowUntil ? 1 - this.slowFactor : 1;
-    this.sprite.setVelocity(
-      Math.cos(angle) * this.def.moveSpeed * slowMultiplier,
-      Math.sin(angle) * this.def.moveSpeed * slowMultiplier
-    );
+    const buffMultiplier = time < this.buffUntil ? this.speedBuffMultiplier : 1;
+    const speed = this.def.moveSpeed * slowMultiplier * buffMultiplier;
+
+    let vx = Math.cos(angle) * speed;
+    let vy = Math.sin(angle) * speed;
+
+    if (this.def.movementPattern === "zigzag") {
+      // Lắc theo trục vuông góc với hướng chính tới player bằng sin wave — không đổi tốc độ tiến thẳng,
+      // chỉ cộng thêm dao động ngang để tạo đường bay ngoằn ngoèo (vd Bat).
+      const perpAngle = angle + Math.PI / 2;
+      const wave = Math.sin(time / 150 + this.zigzagPhase) * speed * 0.6;
+      vx += Math.cos(perpAngle) * wave;
+      vy += Math.sin(perpAngle) * wave;
+    }
+
+    this.sprite.setVelocity(vx, vy);
   }
 }

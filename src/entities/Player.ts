@@ -46,14 +46,23 @@ export class Player {
   }
 
   update(_delta: number): void {
+    // setVelocity() nhận world units/giây — Arcade Physics tự nhân với delta mỗi step, không cần nhân delta thủ công ở đây.
     const speed = this.stats.moveSpeed;
     let vx = 0;
     let vy = 0;
-    if (this.keys.A.isDown) vx = -speed;
-    if (this.keys.D.isDown) vx = speed;
-    if (this.keys.W.isDown) vy = -speed;
-    if (this.keys.S.isDown) vy = speed;
-    this.sprite.setVelocity(vx, vy);
+    if (this.keys.A.isDown) vx = -1;
+    if (this.keys.D.isDown) vx = 1;
+    if (this.keys.W.isDown) vy = -1;
+    if (this.keys.S.isDown) vy = 1;
+
+    // Chuẩn hóa vector để đi chéo không nhanh hơn đi thẳng (vx=vy=1 trước đây cho tốc độ ×√2)
+    if (vx !== 0 && vy !== 0) {
+      const norm = Math.SQRT1_2; // 1/sqrt(2)
+      vx *= norm;
+      vy *= norm;
+    }
+
+    this.sprite.setVelocity(vx * speed, vy * speed);
   }
 
   public takeDamage(amount: number): void {

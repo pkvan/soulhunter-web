@@ -7,13 +7,14 @@ import { SoulSystem } from "@systems/SoulSystem";
 import { CombatSystem } from "@systems/CombatSystem";
 import { UpgradeSystem } from "@systems/UpgradeSystem";
 import { FusionSystem } from "@systems/FusionSystem";
+import { BossSystem } from "@systems/BossSystem";
 import { HUD } from "@ui/HUD";
 import { EventBus, GameEvents } from "@utils/EventBus";
-import { GAMEPLAY } from "@config/GameConfig";
 import fusionsData from "@data/fusions.json";
 import weaponsData from "@data/weapons.json";
 import upgradesData from "@data/upgrades.json";
-import { FusionDef, WeaponDef, UpgradeDef } from "@types/index";
+import bossesData from "@data/bosses.json";
+import { FusionDef, WeaponDef, UpgradeDef, BossDef } from "@types/index";
 
 // DEBUG TẠM: nhấn phím F để cưỡng bức điều kiện fusion tiếp theo trong fusions.json và hiện ngay
 // LevelUpScene — dùng để test hết 15 công thức mà không cần chơi tới maxLevel từng cái.
@@ -22,6 +23,20 @@ const DEBUG_FUSION_TEST = true;
 const fusions = fusionsData as FusionDef[];
 const weapons = weaponsData as WeaponDef[];
 const upgrades = upgradesData as UpgradeDef[];
+const bosses = bossesData as BossDef[];
+
+// DEBUG TẠM THỜI: thay cho GAMEPLAY.BOSS_SPAWN_AT_MS thật (mặc định 5-10 phút) để test nhanh 2 boss
+// mà không phải đợi lâu. Boss 1 (Giant Skeleton, bosses.json[0]) spawn ở mốc này; Boss 2 (Orc Warlord,
+// bosses.json[1]) spawn ở mốc gấp đôi (nếu player còn sống và đã hạ xong Boss 1 trước đó).
+// SAU KHI TEST XONG: đổi bossSpawnThresholdsMs về giá trị thật, vd [GAMEPLAY.BOSS_SPAWN_AT_MS, GAMEPLAY.RUN_DURATION_MS - 60_000].
+const BOSS_SPAWN_DEBUG_MS = 12000;
+
+// Trần delta mỗi frame dùng để tính "thời gian chơi thực tế" (elapsedPlayMs). scene.time.now là clock
+// tuyệt đối của Phaser — nếu tab bị trình duyệt tạm ẩn/throttle rồi bù khung hình khi quay lại, nó có thể
+// NHẢY VỌT hàng chục giây chỉ trong 1 frame (đã verify: real time trôi ~100ms nhưng scene.time.now nhảy
+// ~19600ms), khiến các mốc thời gian tuyệt đối (vd BOSS_SPAWN_DEBUG_MS) bị thỏa mãn gần như ngay lập tức.
+// Cộng dồn delta đã bị chặn trần mỗi frame để elapsedPlayMs luôn phản ánh đúng thời gian chơi thực tế.
+const MAX_FRAME_DELTA_MS = 100;
 
 interface GameSceneData {
   characterId: string;
@@ -36,9 +51,11 @@ export class GameScene extends Phaser.Scene {
   private combatSystem!: CombatSystem;
   private fusionSystem!: FusionSystem;
   private upgradeSystem!: UpgradeSystem;
+  private bossSystem!: BossSystem;
   private hud!: HUD;
-  private runStartTime = 0;
+  private elapsedPlayMs = 0; // thời gian chơi thực tế cộng dồn từ delta đã chặn trần — xem MAX_FRAME_DELTA_MS
   private kills = 0;
+  private bossesSpawnedCount = 0; // 0, 1, 2 — số boss đã spawn trong ván, xem BOSS_SPAWN_DEBUG_MS
   private debugFusionIndex = -1;
 
   constructor() {
@@ -46,8 +63,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(data: GameSceneData): void {
-    this.runStartTime = this.time.now;
+    this.elapsedPlayMs = 0;
     this.kills = 0;
+    this.bossesSpawnedCount = 0;
 
     // TODO: khởi tạo tilemap/background Forest lặp lại theo camera (map vô tận)
 
@@ -55,46 +73,81 @@ export class GameScene extends Phaser.Scene {
     this.poolManager = new PoolManager(this);
     this.spawnSystem = new SpawnSystem(this, this.poolManager, this.player);
     this.soulSystem = new SoulSystem(this, this.player);
+    this.bossSystem = new BossSystem(this, this.player, this.poolManager);
     this.weaponSystem = new WeaponSystem(
-      this, this.player, this.poolManager, this.soulSystem, () => this.registerKill()
+      this, this.player, this.poolManager, this.soulSystem, this.bossSystem, () => this.registerKill()
     );
     this.combatSystem = new CombatSystem(this, this.player, this.poolManager);
     this.fusionSystem = new FusionSystem();
     this.upgradeSystem = new UpgradeSystem(this.player, this.fusionSystem);
-    this.hud = new HUD(this, this.player);
+    this.hud = new HUD(this, this.player, this.bossSystem);
 
-    this.cameras.main.startFollow(this.player.sprite, true);
+    // lerpX/lerpY 0.1 — camera đuổi theo mượt thay vì snap tức thì mỗi frame (snap + roundPixels dễ gây giật khi player di chuyển)
+    this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
 
     EventBus.off(GameEvents.PLAYER_DIED, this.onPlayerDied, this); // tránh đăng ký trùng khi chơi lại nhiều lần
     EventBus.on(GameEvents.PLAYER_DIED, this.onPlayerDied, this);
+    EventBus.off(GameEvents.BOSS_DEFEATED, this.onBossDefeated, this);
+    EventBus.on(GameEvents.BOSS_DEFEATED, this.onBossDefeated, this);
 
     this.scene.launch("LevelUpScene"); // chạy song song, LevelUpScene tự lắng nghe EventBus.LEVEL_UP
 
     if (DEBUG_FUSION_TEST) {
       this.input.keyboard!.on("keydown-F", () => this.debugTriggerNextFusion());
     }
-
-    // TODO: bắn EventBus.emit(GameEvents.BOSS_SPAWNED) khi this.time.now - this.runStartTime >= GAMEPLAY.BOSS_SPAWN_AT_MS
   }
 
   update(time: number, delta: number): void {
+    this.elapsedPlayMs += Math.min(delta, MAX_FRAME_DELTA_MS);
+
     this.player.update(delta);
     this.spawnSystem.update(time, delta);
     this.weaponSystem.update(time, delta);
     this.soulSystem.update(delta);
     this.combatSystem.update(time, delta);
-    this.hud.update(time - this.runStartTime);
+    this.bossSystem.update(time, delta);
+    this.hud.update(this.elapsedPlayMs);
 
-    // TODO: check win condition / boss defeated -> chuyển GameOverScene với kết quả thắng
+    // DEBUG TẠM THỜI — xem comment ở đầu file. Boss thứ N+1 chỉ spawn khi đã qua mốc thời gian riêng
+    // VÀ chưa có boss nào đang sống (đảm bảo Boss 2 chỉ xuất hiện sau khi Boss 1 bị hạ, không spawn chồng).
+    const bossSpawnThresholdsMs = [BOSS_SPAWN_DEBUG_MS, BOSS_SPAWN_DEBUG_MS * 2];
+    if (
+      this.bossesSpawnedCount < bossSpawnThresholdsMs.length &&
+      this.elapsedPlayMs >= bossSpawnThresholdsMs[this.bossesSpawnedCount] &&
+      !this.bossSystem.getBoss()
+    ) {
+      this.bossSystem.spawnBoss(this.bossesSpawnedCount);
+      this.bossesSpawnedCount += 1;
+      EventBus.emit(GameEvents.BOSS_SPAWNED);
+    }
   }
 
   private onPlayerDied(): void {
-    const survivalTimeMs = this.time.now - this.runStartTime;
+    this.scene.stop("LevelUpScene"); // tránh card level-up đè lên màn hình Game Over nếu đang mở đúng lúc chết
+    const survivalTimeMs = this.elapsedPlayMs;
     this.scene.start("GameOverScene", {
       survivalTimeMs,
       kills: this.kills,
       coinEarned: Math.floor(this.kills / 10), // TODO: công thức Coin thật, thay placeholder
-      highestCombo: 0 // TODO: lấy từ hệ thống combo khi có
+      highestCombo: 0, // TODO: lấy từ hệ thống combo khi có
+      victory: false
+    });
+  }
+
+  private onBossDefeated(): void {
+    // Nhiều boss/ván (xem bosses.json) — chỉ kết thúc ván (victory) khi đã hạ xong boss CUỐI CÙNG trong
+    // danh sách. Hạ boss giữa chừng (vd boss 1/2) chỉ ẩn HP bar rồi chơi tiếp, boss tiếp theo tự spawn
+    // theo mốc thời gian riêng (xem update()).
+    if (this.bossesSpawnedCount < bosses.length) return;
+
+    this.scene.stop("LevelUpScene"); // tránh card level-up đè lên màn hình chiến thắng nếu đang mở đúng lúc boss chết
+    const survivalTimeMs = this.elapsedPlayMs;
+    this.scene.start("GameOverScene", {
+      survivalTimeMs,
+      kills: this.kills,
+      coinEarned: Math.floor(this.kills / 10), // TODO: công thức Coin thật, thay placeholder
+      highestCombo: 0, // TODO: lấy từ hệ thống combo khi có
+      victory: true
     });
   }
 
@@ -112,6 +165,10 @@ export class GameScene extends Phaser.Scene {
 
   public getFusionSystem(): FusionSystem {
     return this.fusionSystem;
+  }
+
+  public getBossSystem(): BossSystem {
+    return this.bossSystem;
   }
 
   /** DEBUG TẠM: xem comment ở đầu file. */
