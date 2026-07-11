@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { BootScene } from "@scenes/BootScene";
 import { MenuScene } from "@scenes/MenuScene";
+import { UnlockScene } from "@scenes/UnlockScene";
 import { GameScene } from "@scenes/GameScene";
 import { LevelUpScene } from "@scenes/LevelUpScene";
 import { GameOverScene } from "@scenes/GameOverScene";
@@ -23,7 +24,7 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [BootScene, MenuScene, GameScene, LevelUpScene, GameOverScene]
+  scene: [BootScene, MenuScene, UnlockScene, GameScene, LevelUpScene, GameOverScene]
 };
 
 // Hằng số gameplay dùng chung — chỉnh ở đây thay vì rải rác trong code

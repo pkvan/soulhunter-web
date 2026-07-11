@@ -76,6 +76,16 @@ export interface CharacterDef {
   unlockCostCoin: number;
 }
 
+/** Meta progression mua bằng Coin, áp dụng vĩnh viễn cho mọi ván (xem GDD mục 13) — mua được nhiều lần, giá tăng dần. */
+export interface PermanentUpgradeDef {
+  id: string;
+  name: string;
+  stat: string; // key trong PlayerStats sẽ được cộng thêm value * số lần đã mua (xem Player.ts constructor)
+  value: number;
+  baseCostCoin: number;
+  costMultiplier: number; // giá nhân lên mỗi lần đã mua, vd 1.3 = +30%/lần
+}
+
 export interface PlayerStats {
   maxHp: number;
   currentHp: number;

@@ -1,0 +1,5 @@
+[
+  { "id": "damage", "name": "+2% Damage", "stat": "damageMultiplier", "value": 0.02, "baseCostCoin": 100, "costMultiplier": 1.3 },
+  { "id": "hp", "name": "+5 HP", "stat": "maxHp", "value": 5, "baseCostCoin": 100, "costMultiplier": 1.3 },
+  { "id": "crit", "name": "+1% Critical", "stat": "critChance", "value": 0.01, "baseCostCoin": 100, "costMultiplier": 1.3 }
+]

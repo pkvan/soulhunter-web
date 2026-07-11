@@ -15,6 +15,7 @@ import weaponsData from "@data/weapons.json";
 import upgradesData from "@data/upgrades.json";
 import bossesData from "@data/bosses.json";
 import { FusionDef, WeaponDef, UpgradeDef, BossDef } from "@types/index";
+import { calculateCoinEarned } from "@utils/CoinFormula";
 
 // DEBUG TẠM: nhấn phím F để cưỡng bức điều kiện fusion tiếp theo trong fusions.json và hiện ngay
 // LevelUpScene — dùng để test hết 15 công thức mà không cần chơi tới maxLevel từng cái.
@@ -57,6 +58,10 @@ export class GameScene extends Phaser.Scene {
   private kills = 0;
   private bossesSpawnedCount = 0; // 0, 1, 2 — số boss đã spawn trong ván, xem BOSS_SPAWN_DEBUG_MS
   private debugFusionIndex = -1;
+  private comboCount = 0;
+  private highestCombo = 0;
+  private lastKillAtMs = -Infinity;
+  private readonly COMBO_RESET_MS = 2000; // không giết thêm trong khoảng này thì lần giết tiếp theo reset combo về 1
 
   constructor() {
     super("GameScene");
@@ -66,6 +71,9 @@ export class GameScene extends Phaser.Scene {
     this.elapsedPlayMs = 0;
     this.kills = 0;
     this.bossesSpawnedCount = 0;
+    this.comboCount = 0;
+    this.highestCombo = 0;
+    this.lastKillAtMs = -Infinity;
 
     // TODO: khởi tạo tilemap/background Forest lặp lại theo camera (map vô tận)
 
@@ -80,6 +88,11 @@ export class GameScene extends Phaser.Scene {
     this.combatSystem = new CombatSystem(this, this.player, this.poolManager);
     this.fusionSystem = new FusionSystem();
     this.upgradeSystem = new UpgradeSystem(this.player, this.fusionSystem);
+
+    // HUD là object tạo mới mỗi ván (khác GameScene/LevelUpScene là scene singleton) — phải hủy đăng ký
+    // EventBus của HUD ván trước, nếu không nó vẫn nhận event và thao tác lên GameObject đã bị destroy,
+    // gây treo game khi ván sau bắn event BOSS_SPAWNED/BOSS_DEFEATED/PLAYER_DIED (xem HUD.destroy()).
+    this.hud?.destroy();
     this.hud = new HUD(this, this.player, this.bossSystem);
 
     // lerpX/lerpY 0.1 — camera đuổi theo mượt thay vì snap tức thì mỗi frame (snap + roundPixels dễ gây giật khi player di chuyển)
@@ -128,8 +141,8 @@ export class GameScene extends Phaser.Scene {
     this.scene.start("GameOverScene", {
       survivalTimeMs,
       kills: this.kills,
-      coinEarned: Math.floor(this.kills / 10), // TODO: công thức Coin thật, thay placeholder
-      highestCombo: 0, // TODO: lấy từ hệ thống combo khi có
+      coinEarned: calculateCoinEarned(this.kills, survivalTimeMs, false),
+      highestCombo: this.highestCombo,
       victory: false
     });
   }
@@ -145,14 +158,23 @@ export class GameScene extends Phaser.Scene {
     this.scene.start("GameOverScene", {
       survivalTimeMs,
       kills: this.kills,
-      coinEarned: Math.floor(this.kills / 10), // TODO: công thức Coin thật, thay placeholder
-      highestCombo: 0, // TODO: lấy từ hệ thống combo khi có
+      coinEarned: calculateCoinEarned(this.kills, survivalTimeMs, true),
+      highestCombo: this.highestCombo,
       victory: true
     });
   }
 
   public registerKill(): void {
     this.kills += 1;
+
+    // Combo: chuỗi kill liên tiếp trong COMBO_RESET_MS — quá khoảng này thì lần giết tiếp theo bắt đầu lại từ 1.
+    if (this.elapsedPlayMs - this.lastKillAtMs <= this.COMBO_RESET_MS) {
+      this.comboCount += 1;
+    } else {
+      this.comboCount = 1;
+    }
+    this.lastKillAtMs = this.elapsedPlayMs;
+    this.highestCombo = Math.max(this.highestCombo, this.comboCount);
   }
 
   public getPlayer(): Player {

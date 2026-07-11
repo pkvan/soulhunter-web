@@ -1,10 +1,13 @@
 import Phaser from "phaser";
-import { PlayerStats, EquippedWeapon } from "@types/index";
+import { PlayerStats, EquippedWeapon, PermanentUpgradeDef } from "@types/index";
 import { EventBus, GameEvents } from "@utils/EventBus";
 import charactersData from "@data/characters.json";
+import permanentUpgradesData from "@data/permanentUpgrades.json";
 import { CharacterDef } from "@types/index";
+import { getPermanentUpgradeCount } from "@utils/SaveData";
 
 const characters = charactersData as CharacterDef[];
+const permanentUpgrades = permanentUpgradesData as PermanentUpgradeDef[];
 
 export class Player {
   public sprite: Phaser.Physics.Arcade.Sprite;
@@ -41,6 +44,13 @@ export class Player {
       pickupRadiusMultiplier: 1,
       shieldCharges: 0
     };
+
+    // Permanent Upgrade mua bằng Coin (GDD mục 13) — cộng vĩnh viễn vào stat gốc của MỌI nhân vật, mỗi ván.
+    for (const upgradeDef of permanentUpgrades) {
+      const count = getPermanentUpgradeCount(upgradeDef.id);
+      if (count > 0) this.stats[upgradeDef.stat] += upgradeDef.value * count;
+    }
+    this.stats.currentHp = this.stats.maxHp;
 
     this.equippedWeapons.push({ weaponId: def.startingWeapon, level: 1 });
   }

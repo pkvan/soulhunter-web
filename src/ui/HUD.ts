@@ -67,6 +67,18 @@ export class HUD {
     EventBus.on(GameEvents.PLAYER_DIED, this.hideBossBar, this);
   }
 
+  /**
+   * BẮT BUỘC gọi trước khi tạo HUD mới cho ván tiếp theo (xem GameScene.create()). HUD là object tạo mới
+   * mỗi ván (khác với GameScene/LevelUpScene là scene singleton tự dedupe qua this) — nếu không hủy đăng ký,
+   * instance HUD của ván trước vẫn còn lắng nghe EventBus và sẽ thao tác lên các GameObject đã bị Phaser
+   * destroy khi scene shutdown, ném lỗi giữa vòng lặp render và làm treo toàn bộ game (rAF không tự gọi lại).
+   */
+  public destroy(): void {
+    EventBus.off(GameEvents.BOSS_SPAWNED, this.onBossSpawned, this);
+    EventBus.off(GameEvents.BOSS_DEFEATED, this.hideBossBar, this);
+    EventBus.off(GameEvents.PLAYER_DIED, this.hideBossBar, this);
+  }
+
   update(survivalTimeMs: number): void {
     this.hpText.setText(`HP: ${Math.max(0, Math.floor(this.player.stats.currentHp))}/${this.player.stats.maxHp}`);
 
