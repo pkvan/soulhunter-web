@@ -5,6 +5,7 @@ import { UnlockScene } from "@scenes/UnlockScene";
 import { GameScene } from "@scenes/GameScene";
 import { LevelUpScene } from "@scenes/LevelUpScene";
 import { PauseScene } from "@scenes/PauseScene";
+import { BossLootScene } from "@scenes/BossLootScene";
 import { GameOverScene } from "@scenes/GameOverScene";
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
@@ -25,7 +26,7 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [BootScene, MenuScene, UnlockScene, GameScene, LevelUpScene, PauseScene, GameOverScene]
+  scene: [BootScene, MenuScene, UnlockScene, GameScene, LevelUpScene, PauseScene, BossLootScene, GameOverScene]
 };
 
 // Hằng số gameplay dùng chung — chỉnh ở đây thay vì rải rác trong code
@@ -59,5 +60,21 @@ export const GAMEPLAY = {
   BOSS_SPAWN_DISTANCE_MULTIPLIER: 0.9, // spawn ngoài camera, tính theo cam.width/height giống SpawnSystem
   BOSS_CONTACT_RADIUS: 36, // sprite boss to hơn enemy thường nên bán kính va chạm lớn hơn ENEMY_PLAYER_COLLISION_RADIUS
   BOSS_CONTACT_DAMAGE: 15, // damage va chạm cơ bản khi boss không trong pha active của dash/charge (skill tự có damage riêng)
-  BOSS_CONTACT_COOLDOWN_MS: 800
+  BOSS_CONTACT_COOLDOWN_MS: 800,
+
+  ICE_SHARD_FREEZE_DURATION_MS: 1200, // freeze_chance upgrade: đóng băng HẲN (factor 1) thay vì chỉ slow baseline, xem WeaponSystem.applyOnHitEffects
+  SWORD_HP_BONUS: 30, // cộng thêm Max HP khi Sword nằm trong equippedWeapons, trừ lại khi mất (fusion) — xem Player.syncSwordHpBonus()
+
+  LOOT_CHEST_COLLECT_RADIUS: 30, // khoảng cách 2 tâm được tính là player va chạm nhặt Loot Chest (rương chiến lợi phẩm boss giữa chừng) — xem GameScene.update()
+
+  // Cutscene khi hạ Final Boss (isFinalBoss: true trong bosses.json) — xem GameScene.onFinalBossDefeated().
+  // Chạy TUẦN TỰ 3 bước, bước sau chỉ bắt đầu khi bước trước hoàn tất hẳn (không chạy song song):
+  // (1) camera pan tới đúng vị trí boss, không đổi zoom — (2) slow-motion + bubble + fade dần theo REAL TIME
+  // (this.tweens không phụ thuộc time.timeScale nên duration ở đây chính là thời gian thật cảm nhận được,
+  // không cần bù trừ) — (3) trả timeScale, fade đen, chuyển GameOverScene.
+  FINAL_BOSS_PAN_MS: 500, // bước 1: camera lia mượt tới vị trí boss
+  FINAL_BOSS_SLOWMO_TIMESCALE: 0.06, // bước 2: gần như đứng hình, chỉ còn chuyển động rất nhẹ
+  FINAL_BOSS_FADE_REAL_MS: 3000, // bước 2: boss tan biến đều đặn trong ĐÚNG 3s thật — đây cũng là tổng thời lượng bước 2
+  FINAL_BOSS_BUBBLE_INTERVAL_MS: 120, // bước 2: nhịp spawn bọt khí quanh boss trong lúc tan biến
+  FINAL_BOSS_FADE_OUT_MS: 400 // bước 3: camera.fadeOut trước khi chuyển GameOverScene
 };

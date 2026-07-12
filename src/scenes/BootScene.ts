@@ -58,6 +58,11 @@ export class BootScene extends Phaser.Scene {
     graphics.fillStyle(0xffffff, 1); // boss: trắng thuần, to hơn hẳn enemy thường — Boss.ts setTint() theo bosses.json ra đúng màu riêng từng loại
     graphics.fillRect(0, 0, 64, 64);
     graphics.generateTexture("boss_placeholder", 64, 64);
+    graphics.clear();
+
+    graphics.fillStyle(0x5c5c52, 1); // wall: xám đá, chướng ngại vật tĩnh trên map Forest
+    graphics.fillRect(0, 0, 40, 40);
+    graphics.generateTexture("wall_placeholder", 40, 40);
 
     graphics.destroy();
   }

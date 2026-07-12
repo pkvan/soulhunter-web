@@ -4,6 +4,7 @@ import upgradesData from "@data/upgrades.json";
 import weaponsData from "@data/weapons.json";
 import { UpgradeDef, WeaponDef, UpgradeChoice, WeaponChoice } from "@types/index";
 import { FusionSystem } from "@systems/FusionSystem";
+import { isWeaponUnlocked } from "@utils/SaveData";
 
 const upgrades = upgradesData as UpgradeDef[];
 const weapons = weaponsData as WeaponDef[];
@@ -44,6 +45,7 @@ export class UpgradeSystem {
     const newWeaponPool: UpgradeChoice[] = Phaser.Utils.Array.Shuffle(
       weapons
         .filter((w) => !equippedActive.some((e) => e.weaponId === w.id))
+        .filter((w) => isWeaponUnlocked(w)) // vũ khí đặc biệt (locked=true) chỉ xuất hiện sau khi unlock qua Daily Login/Boss Loot
         .map((w): WeaponChoice => ({ weapon: true, weaponId: w.id, isNew: true }))
     );
 
@@ -97,6 +99,7 @@ export class UpgradeSystem {
   applyWeaponChoice(choice: WeaponChoice): void {
     if (choice.isNew) {
       this.player.equippedWeapons.push({ weaponId: choice.weaponId, level: 1 });
+      this.player.syncSwordHpBonus();
       return;
     }
 

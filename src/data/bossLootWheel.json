@@ -1,0 +1,7 @@
+[
+  { "id": "coin_bonus", "name": "Coin Bonus", "weight": 30, "type": "coin", "minCoin": 200, "maxCoin": 300 },
+  { "id": "dark_soul_x2", "name": "Dark Soul x2", "weight": 25, "type": "darkSoul", "minCoin": 100, "maxCoin": 150 },
+  { "id": "upgrade_token", "name": "Upgrade Token", "weight": 20, "type": "upgradeToken" },
+  { "id": "heal_full", "name": "Heal Full", "weight": 15, "type": "healFull" },
+  { "id": "unlock_weapon", "name": "Unlock Weapon", "weight": 10, "type": "unlockWeapon" }
+]

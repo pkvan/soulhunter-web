@@ -24,6 +24,8 @@ export class Boss {
   public readonly id: string;
   public readonly name: string;
   public readonly color: number;
+  public readonly isFinalBoss: boolean;
+  public isDying = false; // true ngay khi Final Boss chết — chặn tuyệt đối mọi logic update() (xem update())
   public maxHp: number;
   public currentHp: number;
   public moveSpeed: number;
@@ -58,6 +60,7 @@ export class Boss {
     this.id = bossDef.id;
     this.name = bossDef.name;
     this.color = Number(bossDef.color);
+    this.isFinalBoss = bossDef.isFinalBoss ?? false;
     this.maxHp = bossDef.hp;
     this.currentHp = this.maxHp;
     this.moveSpeed = bossDef.moveSpeed;
@@ -72,6 +75,7 @@ export class Boss {
   }
 
   update(time: number, playerX: number, playerY: number): void {
+    if (this.isDying) return; // đang chạy cutscene chiến thắng (Final Boss) — không còn Dash/Summon/Ground Slam/di chuyển nào nữa dù update() vẫn được gọi mỗi frame
     switch (this.phase) {
       case "chase":
         this.moveToward(playerX, playerY, this.moveSpeed);
@@ -110,6 +114,22 @@ export class Boss {
   destroy(): void {
     this.destroySlamTelegraphGraphics();
     this.sprite.destroy();
+  }
+
+  /**
+   * Gọi NGAY LẬP TỨC khi currentHp <= 0 với Final Boss (xem BossSystem.killBoss()) — dừng tuyệt đối mọi
+   * chuyển động/skill trước khi GameScene chạy cutscene chiến thắng, đảm bảo boss đứng yên hoàn toàn:
+   * setVelocity(0,0) + tắt hẳn physics body (không còn bị đẩy/va chạm bởi bất kỳ thứ gì) + huỷ mọi tween
+   * đang dở (vd không có tween nào chạy trên boss lúc chết, nhưng phòng trường hợp sau này thêm hiệu ứng
+   * khác) + huỷ luôn vòng tròn telegraph Ground Slam nếu còn sót lại + set isDying để update() bỏ qua hẳn.
+   */
+  stopForDeathCutscene(): void {
+    this.isDying = true;
+    this.sprite.setVelocity(0, 0);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body | null;
+    if (body) body.enable = false;
+    this.scene.tweens.killTweensOf(this.sprite);
+    this.destroySlamTelegraphGraphics();
   }
 
   private tryStartSkill(time: number): void {

@@ -3,11 +3,11 @@
     "id": "sword",
     "name": "Sword",
     "type": "melee",
-    "baseDamage": 10,
+    "baseDamage": 6,
     "baseCooldownMs": 800,
     "baseRange": 60,
     "maxLevel": 8,
-    "description": "Đánh cận chiến hình quạt trước mặt player"
+    "description": "Đánh cận chiến hình quạt trước mặt player, đổi lại +30 Max HP khi trang bị"
   },
   {
     "id": "fireball",
@@ -17,7 +17,10 @@
     "baseCooldownMs": 1200,
     "baseSpeed": 220,
     "maxLevel": 8,
-    "description": "Bay thẳng theo hướng gần nhất, nổ khi trúng"
+    "dotDamageRatio": 0.2,
+    "dotDurationMs": 3000,
+    "dotTickIntervalMs": 1000,
+    "description": "Bay thẳng theo hướng gần nhất, nổ khi trúng kèm đốt DOT"
   },
   {
     "id": "ice_shard",
@@ -28,7 +31,9 @@
     "baseSpeed": 260,
     "pierceCount": 3,
     "maxLevel": 8,
-    "description": "Xuyên qua nhiều quái trên đường bay"
+    "slowFactor": 0.3,
+    "slowDurationMs": 2000,
+    "description": "Xuyên qua nhiều quái trên đường bay, làm chậm quái trúng đòn"
   },
   {
     "id": "lightning",
@@ -46,7 +51,32 @@
     "baseDamage": 12,
     "baseCooldownMs": 1100,
     "baseSpeed": 240,
+    "maxDistance": 480,
     "maxLevel": 8,
     "description": "Bay ra tối đa X khoảng cách rồi quay lại player"
+  },
+  {
+    "id": "holy_javelin",
+    "name": "Holy Javelin",
+    "type": "projectile_straight",
+    "baseDamage": 22,
+    "baseCooldownMs": 1000,
+    "baseSpeed": 260,
+    "maxLevel": 8,
+    "locked": true,
+    "unlockCostCoin": 400,
+    "description": "Vũ khí đặc biệt — phóng lao thánh bay thẳng, sát thương cao. Chỉ mở khóa qua Daily Login Day 7 hoặc Boss Loot Wheel"
+  },
+  {
+    "id": "storm_hammer",
+    "name": "Storm Hammer",
+    "type": "melee",
+    "baseDamage": 20,
+    "baseCooldownMs": 900,
+    "baseRange": 70,
+    "maxLevel": 8,
+    "locked": true,
+    "unlockCostCoin": 600,
+    "description": "Vũ khí đặc biệt — búa sấm sét cận chiến, sát thương mạnh. Chỉ mở khóa qua Daily Login Day 7 hoặc Boss Loot Wheel"
   }
 ]

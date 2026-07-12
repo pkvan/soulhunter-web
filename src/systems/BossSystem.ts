@@ -86,11 +86,26 @@ export class BossSystem {
     if (isDead) this.killBoss();
   }
 
+  /**
+   * Final Boss (isFinalBoss: true trong bosses.json) chết đi thẳng cutscene chiến thắng (slow-motion +
+   * fade, xem GameScene.onFinalBossDefeated) — KHÔNG destroy() sprite ngay ở đây vì GameScene còn cần
+   * tween scale/alpha nó trong lúc cutscene chạy, tự destroy sau khi xong. Boss thường (không phải final)
+   * vẫn giữ nguyên hành vi cũ: destroy ngay, rơi Loot Chest tại vị trí vừa chết.
+   */
   private killBoss(): void {
     if (!this.boss) return;
-    this.boss.destroy();
+    const boss = this.boss;
+    const deathX = boss.sprite.x;
+    const deathY = boss.sprite.y;
     this.boss = null;
-    EventBus.emit(GameEvents.BOSS_DEFEATED);
+
+    if (boss.isFinalBoss) {
+      boss.stopForDeathCutscene(); // BƯỚC 0: dừng tuyệt đối trước khi GameScene chạy cutscene chiến thắng
+      EventBus.emit(GameEvents.FINAL_BOSS_DEFEATED, { boss, x: deathX, y: deathY });
+    } else {
+      boss.destroy();
+      EventBus.emit(GameEvents.BOSS_DEFEATED, { x: deathX, y: deathY });
+    }
   }
 
   private summonEnemies(boss: Boss): void {

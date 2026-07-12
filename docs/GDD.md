@@ -23,11 +23,11 @@ Spawn → Giết quái → Nhặt Soul → Level Up → Chọn 1/3 nâng cấp
 
 | Vũ khí | Cơ chế |
 |---|---|
-| Sword | Đánh cận chiến |
-| Fireball | Bay thẳng |
-| Ice Shard | Xuyên nhiều quái |
+| Sword | Đánh cận chiến — damage thấp nhất trong 5 vũ khí, đổi lại là vũ khí "tank": trang bị Sword cộng thẳng +30 Max HP (mất bonus nếu Sword bị fusion "nuốt" mất) |
+| Fireball | Bay thẳng, nổ khi trúng — kèm đốt DOT baseline (xem mục 19) |
+| Ice Shard | Xuyên nhiều quái — kèm làm chậm baseline (xem mục 19) |
 | Lightning | Đánh mục tiêu ngẫu nhiên |
-| Boomerang | Bay ra rồi quay về |
+| Boomerang | Bay ra xa rồi quay lại player — tầm bay xa nhất trong nhóm projectile |
 
 ## 5. Upgrade (20 loại)
 
@@ -80,6 +80,8 @@ Kỹ năng: Dash, Summon, Ground Slam. Không cần quá phức tạp ở MVP.
 ## 9. Map
 
 Chỉ 1 map: Forest, dạng vô tận (procedural/tile lặp lại), không cần nhiều màn.
+
+**Wall (chướng ngại vật)**: rải rác vài cụm quanh khu vực player xuất phát, đủ thưa để không cản trở gameplay chính. Player và mọi loại Enemy đều va chạm (chặn đường đi), TRỪ Ghost — đúng theo đặc điểm "đi xuyên vật cản" ở mục 7.
 
 ## 10. Đồ họa và hiệu ứng
 
@@ -136,3 +138,13 @@ Vật phẩm ngẫu nhiên rơi trên map trong lúc chơi (khác Soul — Soul 
 |---|---|
 | Heal Potion | Hồi ngay một phần trăm Max HP (không vượt quá Max HP) |
 | Magnet Orb | Hút toàn bộ Soul đang có trên map (kể cả ngoài tầm nhìn) bay hội tụ về player — Soul đuổi theo vị trí player realtime (không phải điểm cố định lúc nhặt), tốc độ tăng dần mô phỏng lực hút, tất cả bắt đầu bay cùng lúc nên tự nhiên hội tụ từ nhiều hướng |
+
+## 19. Cơ chế baseline vũ khí (khác 20 Upgrade ở mục 5)
+
+Một số vũ khí có sẵn hiệu ứng đặc trưng ngay từ đầu (không cần chọn upgrade để mở khóa) — khác với 20 upgrade ở mục 5 vốn là lựa chọn ngẫu nhiên khi level up. Các cơ chế baseline này áp dụng cho MỌI lượt trúng đòn của đúng vũ khí đó, và một vài upgrade cũ được đổi ý nghĩa để tránh trùng lặp với baseline mới:
+
+- **Ice Shard — Slow baseline**: mỗi lần trúng quái, tự làm chậm 30% moveSpeed trong ~2 giây rồi tự phục hồi, không cần upgrade. Upgrade **Freeze Chance** (mục 5) vẫn giữ nguyên vai trò riêng biệt: % đóng băng HẲN (moveSpeed = 0) trong thời gian ngắn, đè lên hiệu ứng slow baseline khi roll trúng — khác hẳn slow baseline vốn chỉ giảm 30%.
+- **Fireball — Burn DOT baseline**: mỗi lần trúng quái, gây thêm damage theo thời gian bằng ~20% damage gốc mỗi giây trong 3 giây. Upgrade **Burn** (mục 5) không còn tạo hiệu ứng cháy riêng — đổi thành cộng dồn thêm % damage/giây vào DOT baseline của Fireball, stack được mỗi lần chọn lại.
+- **Shrapnel (upgrade mới, mục 5)**: chỉ áp dụng cho Fireball/Ice Shard — mỗi lần trúng quái, tự bắn thêm N tia phụ (damage giảm 50% so với đòn gốc) dàn đều quanh 1 hướng ngẫu nhiên, trúng quái khác. Stackable: mỗi lần chọn lại tăng thêm 1 tia phụ (2 → 3 → 4...). Tia phụ khi trúng KHÔNG tự bắn thêm tia phụ (chặn đệ quy vô hạn).
+- **Sword — vũ khí tank**: baseDamage thấp nhất trong 5 vũ khí khởi điểm, đổi lại khi Sword còn trong loadout (`equippedWeapons`) player được cộng thẳng +30 Max HP. Mất bonus ngay khi Sword bị fusion "nuốt" làm nguyên liệu (xem mục 6) hoặc không còn trang bị.
+- **Boomerang — tầm bay xa hơn**: khoảng cách bay ra tối đa trước khi quay lại player tăng so với baseline gốc (giờ đọc từ số liệu riêng theo vũ khí thay vì hằng số dùng chung cho mọi vũ khí projectile_return).

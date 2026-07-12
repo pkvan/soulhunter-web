@@ -6,6 +6,8 @@ export interface WeaponDef {
   baseCooldownMs: number;
   maxLevel: number;
   description: string;
+  locked?: boolean; // vũ khí đặc biệt chưa mở khóa từ đầu — chỉ unlock qua Daily Login Day7 hoặc Boss Loot Wheel, xem SaveData.isWeaponUnlocked()
+  unlockCostCoin?: number; // chỉ dùng để so sánh "rẻ nhất" khi chọn vũ khí unlock ngẫu nhiên, không có màn mua trực tiếp
   [key: string]: unknown;
 }
 
@@ -15,7 +17,7 @@ export interface UpgradeDef {
   stat: string;
   value: number;
   stackable: boolean;
-  appliesTo?: string;
+  appliesTo?: string | string[]; // 1 weaponId hoặc mảng nhiều weaponId (vd Shrapnel áp cho cả Fireball/Ice Shard)
 }
 
 export interface FusionDef {
@@ -74,6 +76,7 @@ export interface BossDef {
   hp: number;
   moveSpeed: number;
   skillIds: string[]; // tham chiếu tới bossSkills.json; thứ tự trong mảng = thứ tự ưu tiên khi nhiều skill cùng hết cooldown
+  isFinalBoss?: boolean; // true = boss cuối cùng của ván — chết đi thẳng cutscene chiến thắng (slow-motion + fade), KHÔNG rơi Loot Chest như boss thường
 }
 
 /**
@@ -159,6 +162,24 @@ export interface DailyChallengeDef {
   enemyHpMultiplier: number;
   playerDamageMultiplier: number;
   coinRewardMultiplier: number;
+}
+
+/** 1 mốc trong chuỗi 7 ngày Daily Login Reward (data/dailyRewards.json) — xem SaveData.checkAndAdvanceLoginStreak(). */
+export interface DailyRewardDef {
+  day: number;
+  coin: number;
+  specialUnlock?: boolean; // chỉ Day 7 — mở khóa 1 vũ khí đặc biệt rẻ nhất chưa unlock, CHỈ 1 LẦN DUY NHẤT trong toàn bộ lịch sử chơi
+  permanentUpgradeToken?: boolean;
+}
+
+/** 1 ô trong vòng xoay chiến lợi phẩm Boss (data/bossLootWheel.json) — xem scenes/BossLootScene.ts. */
+export interface BossLootDef {
+  id: string;
+  name: string;
+  weight: number; // trọng số roll ngẫu nhiên, cũng dùng để chia góc vòng quay
+  type: "coin" | "darkSoul" | "upgradeToken" | "healFull" | "unlockWeapon";
+  minCoin?: number; // "coin" và "darkSoul" đều random Coin trong khoảng này
+  maxCoin?: number;
 }
 
 /** 1 trong 3 lựa chọn khi level up: fusion (2 vũ khí gốc -> 1 vũ khí mới, xem FusionSystem). */

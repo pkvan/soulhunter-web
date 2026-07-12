@@ -41,6 +41,11 @@ export class PoolManager {
     return this.enemyPool.filter((e) => e.active);
   }
 
+  /** Toàn bộ sprite Enemy trong pool (kể cả đang inactive nằm ở (-1000,-1000)) — dùng để đăng ký collider Wall 1 lần duy nhất. */
+  getAllEnemySprites(): Phaser.Physics.Arcade.Sprite[] {
+    return this.enemyPool.map((e) => e.sprite);
+  }
+
   getAllActiveProjectiles(): Projectile[] {
     return this.projectilePool.filter((p) => p.active);
   }

@@ -104,7 +104,11 @@ export class PauseScene extends Phaser.Scene {
 
       const def = weapons.find((w) => w.id === eq.weaponId);
       if (!def) continue;
-      const cardData: CardData = { weapon: true, weaponId: eq.weaponId, isNew: false };
+      // Cùng 1 tiêu chí "mới" với LevelUpCard: còn nguyên level 1 (chưa từng chọn card "nâng cấp" lần nào)
+      // vẫn hiện viền xanh dương "VŨ KHÍ MỚI" y hệt lúc vừa chọn ở Level Up — tránh lệch màu ngay khi mở
+      // Pause Menu liền sau khi vừa pick 1 vũ khí mới. Level >= 2 (đã nâng cấp ít nhất 1 lần) mới đổi sang
+      // xanh lá "NÂNG CẤP".
+      const cardData: CardData = { weapon: true, weaponId: eq.weaponId, isNew: eq.level === 1 };
       items.push({ title: def.name, style: getCardStyle(cardData), badge: `Lv${eq.level}` });
     }
 

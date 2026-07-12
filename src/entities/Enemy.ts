@@ -41,6 +41,7 @@ export class Enemy {
     // TODO: texture key placeholder, đổi theo def.id khi có sprite thật
     this.sprite = scene.physics.add.sprite(-1000, -1000, "enemy_placeholder");
     this.sprite.setActive(false).setVisible(false);
+    this.sprite.setData("enemyInstance", this); // GameScene đọc lại qua processCallback của collider Wall để biết flag "phasing" (Ghost đi xuyên tường)
 
     this.eliteGlow = scene.add.circle(-1000, -1000, 22, Number(elite.eliteGlowColor), 0.35);
     this.eliteGlow.setVisible(false).setDepth(-1);

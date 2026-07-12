@@ -35,6 +35,13 @@ export class LevelUpScene extends Phaser.Scene {
     // Bảo vệ chống LEVEL_UP bắn dồn dập (vd nhặt 2 Soul cùng frame trước khi pause() kịp có hiệu lực)
     // gây chồng 2 bộ card lên nhau khiến người chơi click nhiều lần vẫn không chọn được đúng thẻ.
     if (this.isShowingChoices) return;
+
+    // Listener EventBus.on(LEVEL_UP) vẫn còn sống dù scene đã stop() (EventBus không thuộc vòng đời Scene) —
+    // nếu GameScene vừa stop("LevelUpScene") giữa chừng (vd đang chạy cutscene chiến thắng Final Boss ở
+    // GameScene.onFinalBossDefeated) mà đúng lúc đó 1 LEVEL_UP khác bắn ra, showChoices() KHÔNG được phép
+    // chạy tiếp trên 1 scene đã ngừng hoạt động — sẽ pause() GameScene giữa cutscene, làm đứng hình tween.
+    if (!this.scene.isActive()) return;
+
     this.isShowingChoices = true;
 
     this.scene.bringToTop(); // đảm bảo overlay luôn render/nhận input trên GameScene đã pause

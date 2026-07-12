@@ -23,12 +23,13 @@ export class Projectile {
   public damage = 0;
   public pierceRemaining = 0;
   public weaponId = ""; // để WeaponSystem tra lại WeaponDef (kể cả vũ khí fusion) khi xử lý on-hit effect
+  public isShrapnel = false; // tia phụ do upgrade Shrapnel bắn ra — chặn đệ quy (tia phụ trúng KHÔNG tự bắn thêm tia phụ)
   private weaponType: WeaponDef["type"] = "projectile_straight";
   private speed = 200;
   private returning = false;
   private originX = 0;
   private originY = 0;
-  private readonly maxDistance = 300; // boomerang: khoảng cách bay ra tối đa trước khi quay lại
+  private maxDistance = 300; // boomerang: khoảng cách bay ra tối đa trước khi quay lại, đọc từ weapon.maxDistance nếu có
   private readonly maxTravelDistance = 500; // fireball/ice shard: tự despawn nếu bay quá xa mà không trúng gì
   private readonly returnDespawnRadius = 20;
   private hitEnemies: Set<Target> = new Set(); // dùng chung cho Enemy thường lẫn Boss (xem entities/Boss.ts)
@@ -38,7 +39,7 @@ export class Projectile {
     this.sprite.setActive(false).setVisible(false);
   }
 
-  fire(x: number, y: number, angleRad: number, weapon: WeaponDef, damage: number): void {
+  fire(x: number, y: number, angleRad: number, weapon: WeaponDef, damage: number, isShrapnel = false): void {
     this.originX = x;
     this.originY = y;
     this.damage = damage;
@@ -46,8 +47,10 @@ export class Projectile {
     this.weaponType = weapon.type;
     this.pierceRemaining = (weapon.pierceCount as number) ?? 0;
     this.speed = (weapon.baseSpeed as number) ?? 200;
+    this.maxDistance = (weapon.maxDistance as number) ?? 300;
     this.returning = false;
     this.active = true;
+    this.isShrapnel = isShrapnel;
     this.hitEnemies.clear();
 
     this.sprite.setTexture(PROJECTILE_TEXTURES[weapon.id] ?? "projectile_placeholder");

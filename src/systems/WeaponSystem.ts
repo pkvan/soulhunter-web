@@ -6,13 +6,23 @@ import { PoolManager } from "@systems/PoolManager";
 import { SoulSystem } from "@systems/SoulSystem";
 import { BossSystem } from "@systems/BossSystem";
 import { showDamageNumber } from "@ui/DamageNumber";
+import { Projectile } from "@entities/Projectile";
 import weaponsData from "@data/weapons.json";
 import fusionWeaponsData from "@data/fusionWeapons.json";
 import soulCorruptionData from "@data/soulCorruption.json";
-import { WeaponDef, SoulCorruptionConfig } from "@types/index";
+import upgradesData from "@data/upgrades.json";
+import { WeaponDef, SoulCorruptionConfig, UpgradeDef } from "@types/index";
 import { GAMEPLAY } from "@config/GameConfig";
 
 const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
+const upgrades = upgradesData as UpgradeDef[];
+const shrapnelDef = upgrades.find((u) => u.id === "shrapnel");
+// appliesTo có thể là string đơn hoặc mảng (vd Shrapnel áp cho cả Fireball/Ice Shard) — chuẩn hóa về mảng 1 lần khi module load.
+const shrapnelAppliesTo: string[] = Array.isArray(shrapnelDef?.appliesTo)
+  ? (shrapnelDef!.appliesTo as string[])
+  : shrapnelDef?.appliesTo
+    ? [shrapnelDef.appliesTo as string]
+    : [];
 
 const weapons = weaponsData as WeaponDef[];
 // Vũ khí fusion không nằm trong weapons.json gốc (được tạo ra từ 2 vũ khí bị "nuốt" khi fusion,
@@ -159,7 +169,7 @@ export class WeaponSystem {
 
         this.applyDamage(enemy, projectile.damage);
         const def = allWeaponDefs.find((w) => w.id === projectile.weaponId);
-        if (def) this.applyOnHitEffects(enemy, def, projectile.damage, time, [enemy], projectile.sprite.x, projectile.sprite.y);
+        if (def) this.applyOnHitEffects(enemy, def, projectile.damage, time, [enemy], projectile.sprite.x, projectile.sprite.y, projectile);
         projectile.registerHit(enemy);
 
         if (!projectile.active) break; // projectile đã despawn (nổ / hết pierce) -> dừng kiểm tra enemy khác
@@ -180,16 +190,31 @@ export class WeaponSystem {
     time: number,
     excludeFromChain: Enemy[],
     hitX = enemy.sprite.x,
-    hitY = enemy.sprite.y
+    hitY = enemy.sprite.y,
+    sourceProjectile?: Projectile
   ): void {
     const slowChance = (def.slowChance as number) ?? 1;
     if (def.slowFactor !== undefined && Phaser.Math.FloatBetween(0, 1) <= slowChance) {
       enemy.applySlow(def.slowFactor as number, (def.slowDurationMs as number) ?? 1500, time);
     }
 
-    if (def.dotDamage !== undefined) {
+    // Freeze Chance (upgrade riêng biệt với slow baseline của Ice Shard ở trên): % đóng băng HẲN (factor 1)
+    // thay vì chỉ làm chậm — ghi đè slow baseline vì gọi applySlow() lần 2 ngay sau đó trong cùng lượt trúng đòn.
+    if (def.id === "ice_shard") {
+      const freezeChance = this.player.stats.freezeChance ?? 0;
+      if (freezeChance > 0 && Phaser.Math.FloatBetween(0, 1) < freezeChance) {
+        enemy.applySlow(1, GAMEPLAY.ICE_SHARD_FREEZE_DURATION_MS, time);
+      }
+    }
+
+    if (def.dotDamage !== undefined || def.dotDamageRatio !== undefined) {
+      // Burn upgrade (id "burn"): cộng thêm % damage/giây vào tỉ lệ DOT gốc của Fireball, không tạo hiệu ứng riêng.
+      const burnBonusRatio = def.id === "fireball" ? (this.player.stats.burnChance ?? 0) : 0;
+      const dotDamage = def.dotDamageRatio !== undefined
+        ? damage * ((def.dotDamageRatio as number) + burnBonusRatio)
+        : (def.dotDamage as number);
       enemy.applyDot(
-        def.dotDamage as number,
+        dotDamage,
         (def.dotDurationMs as number) ?? 2500,
         (def.dotTickIntervalMs as number) ?? 500,
         time
@@ -227,6 +252,25 @@ export class WeaponSystem {
         if (dist > (def.aoeRadius as number)) continue;
         other.applySlow((def.aoeSlowFactor as number) ?? 0.6, (def.aoeSlowDurationMs as number) ?? 1500, time);
       }
+    }
+
+    // Shrapnel (upgrade stackable, chỉ Fireball/Ice Shard theo appliesTo trong upgrades.json): bắn thêm N tia phụ
+    // dàn đều quanh 1 góc ngẫu nhiên khi trúng quái, damage giảm 50%. Chặn đệ quy bằng cờ isShrapnel trên Projectile
+    // gốc — tia phụ trúng KHÔNG tự bắn thêm tia phụ nữa.
+    const shrapnelCount = this.player.stats.shrapnelCount ?? 0;
+    if (shrapnelCount > 0 && !sourceProjectile?.isShrapnel && shrapnelAppliesTo.includes(def.id)) {
+      this.spawnShrapnel(hitX, hitY, def, damage * 0.5, shrapnelCount + 1);
+    }
+  }
+
+  /** count tia phụ dàn đều 360° quanh 1 góc gốc ngẫu nhiên, dùng chung Projectile pool với cờ isShrapnel=true. */
+  private spawnShrapnel(x: number, y: number, def: WeaponDef, damage: number, count: number): void {
+    const baseAngle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    for (let i = 0; i < count; i++) {
+      const projectile = this.poolManager.getProjectile();
+      if (!projectile) break;
+      const angle = baseAngle + (Math.PI * 2 * i) / count;
+      projectile.fire(x, y, angle, def, damage, true);
     }
   }
 

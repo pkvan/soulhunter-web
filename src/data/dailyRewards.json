@@ -1,0 +1,9 @@
+[
+  { "day": 1, "coin": 50 },
+  { "day": 2, "coin": 100 },
+  { "day": 3, "coin": 150 },
+  { "day": 4, "coin": 200, "permanentUpgradeToken": true },
+  { "day": 5, "coin": 250 },
+  { "day": 6, "coin": 350 },
+  { "day": 7, "coin": 500, "specialUnlock": true }
+]

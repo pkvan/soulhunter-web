@@ -13,6 +13,7 @@
     "color": "0x7f1d1d",
     "hp": 2100,
     "moveSpeed": 40,
-    "skillIds": ["charge", "roar", "ground_slam"]
+    "skillIds": ["charge", "roar", "ground_slam"],
+    "isFinalBoss": true
   }
 ]

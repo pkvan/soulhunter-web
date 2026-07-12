@@ -11,7 +11,9 @@ import {
   getSelectedCharacterId,
   setSelectedCharacterId,
   getPermanentUpgradeCount,
-  incrementPermanentUpgrade
+  incrementPermanentUpgrade,
+  getPermanentUpgradeTokens,
+  usePermanentUpgradeToken
 } from "@utils/SaveData";
 
 const characters = charactersData as CharacterDef[];
@@ -25,6 +27,7 @@ export class UnlockScene extends Phaser.Scene {
   private activeTab: Tab = "character";
   private contentContainer!: Phaser.GameObjects.Container;
   private coinText!: Phaser.GameObjects.Text;
+  private tokenText!: Phaser.GameObjects.Text;
   private charTabButton!: Phaser.GameObjects.Text;
   private upgradeTabButton!: Phaser.GameObjects.Text;
 
@@ -36,6 +39,8 @@ export class UnlockScene extends Phaser.Scene {
     this.add.text(480, 26, "UNLOCK", { fontSize: "26px", color: "#ffffff", fontStyle: "bold" }).setOrigin(0.5);
 
     this.coinText = this.add.text(944, 16, "", { fontSize: "16px", color: "#fbbf24", fontStyle: "bold" }).setOrigin(1, 0);
+    // Permanent Upgrade Token (từ Daily Login Day4) — trừ token thay vì Coin khi mua ở tab "Nâng cấp vĩnh viễn".
+    this.tokenText = this.add.text(944, 38, "", { fontSize: "13px", color: "#8be9fd" }).setOrigin(1, 0);
 
     const backButton = this.add.text(16, 16, "< Quay lại", { fontSize: "16px", color: "#9ca3af" })
       .setInteractive({ useHandCursor: true });
@@ -63,6 +68,7 @@ export class UnlockScene extends Phaser.Scene {
 
   private updateCoinText(): void {
     this.coinText.setText(`Coin: ${getTotalCoin()}`);
+    this.tokenText.setText(`Token: ${getPermanentUpgradeTokens()}`);
   }
 
   private renderContent(): void {
@@ -174,6 +180,20 @@ export class UnlockScene extends Phaser.Scene {
       }).setOrigin(0, 0.5);
 
       this.contentContainer.add([bg, nameText, countText]);
+
+      const tokens = getPermanentUpgradeTokens();
+      if (!isMaxed && tokens > 0) {
+        // Permanent Upgrade Token (Daily Login Day4/Boss Loot): mua MIỄN PHÍ 1 lần bằng cách trừ token thay vì Coin.
+        const tokenButton = this.add.text(420, y + 22, `[ Dùng Token (${tokens}) ]`, {
+          fontSize: "12px", color: "#8be9fd", fontStyle: "bold"
+        }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
+        tokenButton.on("pointerdown", () => {
+          if (!usePermanentUpgradeToken()) return; // an toàn nếu token đổi giữa lúc render và click
+          incrementPermanentUpgrade(def.id);
+          this.renderContent();
+        });
+        this.contentContainer.add(tokenButton);
+      }
 
       if (isMaxed) {
         // Đạt giới hạn mua — hiện icon check thay vì giá tiền, không cho bấm nữa.

@@ -13,7 +13,17 @@
       "Bash(git push *)",
       "Bash(git config *)",
       "Bash(git remote *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(xargs ls -la)",
+      "Bash(sort -k9)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(w['id'], {k:v for k,v in w.items\\(\\) if k not in \\('id','name','description'\\)}\\) for w in d]\")",
+      "Bash(git stash *)",
+      "Bash(mv \"./{docs,src/{config,scenes,entities,systems,data,ui,utils,types},public/assets/{sprites,audio,tilemaps}}/8BitBattleLoop.ogg\" public/assets/audio/)",
+      "Bash(mv \"./{docs,src/{config,scenes,entities,systems,data,ui,utils,types},public/assets/{sprites,audio,tilemaps}}/enterthedungeon-bonus.mp3\" public/assets/audio/)",
+      "Bash(mv \"./{docs,src/{config,scenes,entities,systems,data,ui,utils,types},public/assets/{sprites,audio,tilemaps}}/victorybound.mp3\" public/assets/audio/)",
+      "Bash(rm -rf \"./{docs,src/{config,scenes,entities,systems,data,ui,utils,types},public/assets/{sprites,audio,tilemaps}}\" && find . -maxdepth 1 -name \"*{*\")",
+      "Bash(rm -rf \"./{docs,src\")",
+      "Bash(echo \"done, exit: $?\")"
     ]
   }
 }

@@ -57,5 +57,6 @@ export class FusionSystem {
       (w) => !fusion.requires.includes(w.weaponId)
     );
     player.equippedWeapons.push({ weaponId: fusion.id, level: 1, fusedInto: fusion.id });
+    player.syncSwordHpBonus(); // Sword có thể vừa bị "nuốt" làm nguyên liệu fusion -> trừ lại đúng bonus HP
   }
 }

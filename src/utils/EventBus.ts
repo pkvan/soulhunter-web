@@ -13,6 +13,8 @@ export const GameEvents = {
   PLAYER_DIED: "player_died",
   BOSS_SPAWNED: "boss_spawned",
   BOSS_DEFEATED: "boss_defeated",
+  FINAL_BOSS_DEFEATED: "final_boss_defeated",
+  BOSS_LOOT_RESOLVED: "boss_loot_resolved",
   FUSION_TRIGGERED: "fusion_triggered",
   SOUL_COLLECTED: "soul_collected"
 } as const;

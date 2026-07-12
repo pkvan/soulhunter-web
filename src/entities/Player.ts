@@ -17,6 +17,7 @@ export class Player {
   public readonly characterId: string; // lưu lại để PauseScene "Play Again" restart đúng nhân vật đang dùng
   public appliedUpgrades: string[] = []; // id của UpgradeDef đã chọn trong ván này (kể cả trùng nếu stack) — xem UpgradeSystem.applyUpgrade(), dùng để hiện icon loadout trong PauseScene
   public bonusCoinFromOverflowSoul = 0; // soul dư sau khi đạt MAX_LEVEL quy đổi thành Coin thay vì lãng phí — xem gainSoul() + GameScene.computeCoinEarned()
+  private swordHpBonusApplied = false; // đánh dấu đã cộng GAMEPLAY.SWORD_HP_BONUS chưa, tránh cộng/trừ trùng lặp — xem syncSwordHpBonus()
   private soulCount = 0;
   private level = 1;
   private soulToNextLevel = 10;
@@ -65,6 +66,24 @@ export class Player {
     this.stats.currentHp = this.stats.maxHp;
 
     this.equippedWeapons.push({ weaponId: def.startingWeapon, level: 1 });
+    this.syncSwordHpBonus();
+  }
+
+  /**
+   * Sword đổi lại +SWORD_HP_BONUS Max HP khi trang bị (bù cho baseDamage thấp hơn hẳn vũ khí khác) — gọi lại
+   * mỗi lần equippedWeapons thay đổi (thêm vũ khí mới, hoặc Sword bị fusion "nuốt" mất) để cộng/trừ đúng 1 lần.
+   */
+  public syncSwordHpBonus(): void {
+    const hasSword = this.equippedWeapons.some((w) => w.weaponId === "sword" && !w.fusedInto);
+    if (hasSword && !this.swordHpBonusApplied) {
+      this.stats.maxHp += GAMEPLAY.SWORD_HP_BONUS;
+      this.stats.currentHp += GAMEPLAY.SWORD_HP_BONUS;
+      this.swordHpBonusApplied = true;
+    } else if (!hasSword && this.swordHpBonusApplied) {
+      this.stats.maxHp -= GAMEPLAY.SWORD_HP_BONUS;
+      this.stats.currentHp = Math.min(this.stats.currentHp, this.stats.maxHp);
+      this.swordHpBonusApplied = false;
+    }
   }
 
   update(_delta: number): void {
