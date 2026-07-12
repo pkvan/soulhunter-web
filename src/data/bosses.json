@@ -5,7 +5,8 @@
     "color": "0xd1d5db",
     "hp": 1400,
     "moveSpeed": 40,
-    "skillIds": ["dash", "summon", "ground_slam"]
+    "skillIds": ["dash", "summon", "ground_slam"],
+    "isFinalBoss": true
   },
   {
     "id": "orc_warlord",
@@ -14,6 +15,15 @@
     "hp": 2100,
     "moveSpeed": 40,
     "skillIds": ["charge", "roar", "ground_slam"],
+    "isFinalBoss": true
+  },
+  {
+    "id": "grave_keeper",
+    "name": "Grave Keeper",
+    "color": "0x581c87",
+    "hp": 1900,
+    "moveSpeed": 40,
+    "skillIds": ["charge", "summon", "ground_slam"],
     "isFinalBoss": true
   }
 ]

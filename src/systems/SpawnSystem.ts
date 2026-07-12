@@ -1,13 +1,11 @@
 import Phaser from "phaser";
 import { PoolManager } from "@systems/PoolManager";
 import { Player } from "@entities/Player";
-import enemiesData from "@data/enemies.json";
 import eliteData from "@data/elite.json";
 import soulCorruptionData from "@data/soulCorruption.json";
 import { EnemyDef, EliteConfig, SoulCorruptionConfig } from "@types/index";
 import { GAMEPLAY } from "@config/GameConfig";
 
-const enemies = enemiesData as EnemyDef[];
 const elite = eliteData as EliteConfig;
 const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
 
@@ -33,7 +31,9 @@ export class SpawnSystem {
     private scene: Phaser.Scene,
     private poolManager: PoolManager,
     private player: Player,
-    private enemyHpMultiplier = 1 // Daily Challenge modifier (xem GameScene) — mặc định 1 khi chơi ván thường
+    private enemies: EnemyDef[], // bộ quái theo map hiện tại (xem utils/MapData.ts), thay cho import enemies.json cố định
+    private enemyHpMultiplier = 1, // Daily Challenge modifier (xem GameScene) — mặc định 1 khi chơi ván thường
+    private mapDifficultyMultiplier = 1 // mapDef.difficultyMultiplier (xem data/maps.json) — map càng về sau càng khó hơn
   ) {}
 
   update(time: number, _delta: number): void {
@@ -76,12 +76,12 @@ export class SpawnSystem {
       elite.eliteChanceBase + Math.max(0, this.difficultyMultiplier - 1) * elite.eliteChancePerDifficulty
     );
     const isElite = Math.random() < eliteChance;
-    enemy.spawn(x, y, def, this.difficultyMultiplier * this.enemyHpMultiplier, isElite);
+    enemy.spawn(x, y, def, this.difficultyMultiplier * this.enemyHpMultiplier * this.mapDifficultyMultiplier, isElite);
   }
 
   private pickEnemyDef(): EnemyDef {
-    // TODO: trọng số spawn nên đổi theo thời gian sống — đầu game nhiều Slime, cuối game nhiều Orc/Bat
-    return enemies[Phaser.Math.Between(0, enemies.length - 1)];
+    // TODO: trọng số spawn nên đổi theo thời gian sống — đầu game nhiều quái yếu, cuối game nhiều quái mạnh
+    return this.enemies[Phaser.Math.Between(0, this.enemies.length - 1)];
   }
 
   private getSpawnPositionOutsideCamera(): { x: number; y: number } {

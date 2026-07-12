@@ -6,6 +6,8 @@ export interface WeaponDef {
   baseCooldownMs: number;
   maxLevel: number;
   description: string;
+  color?: string; // hex string (vd "0xf97316") — màu icon placeholder dùng chung ở LevelUpCard/HUD, xem ui/WeaponIcon.ts
+  rarity?: string; // chưa có data nào gán giá trị — chỉ để kiến trúc Card sẵn sàng hiện Rarity khi có
   locked?: boolean; // vũ khí đặc biệt chưa mở khóa từ đầu — chỉ unlock qua Daily Login Day7 hoặc Boss Loot Wheel, xem SaveData.isWeaponUnlocked()
   unlockCostCoin?: number; // chỉ dùng để so sánh "rẻ nhất" khi chọn vũ khí unlock ngẫu nhiên, không có màn mua trực tiếp
   [key: string]: unknown;
@@ -14,6 +16,8 @@ export interface WeaponDef {
 export interface UpgradeDef {
   id: string;
   name: string;
+  description?: string; // mô tả ngắn (tối đa ~2 dòng khi render) giải thích upgrade làm gì — hiện trong LevelUpCard
+  rarity?: string; // chưa có data nào gán giá trị — chỉ để kiến trúc Card sẵn sàng hiện Rarity khi có
   stat: string;
   value: number;
   stackable: boolean;
@@ -97,6 +101,18 @@ export interface BossSkillDef {
   damageBuff?: number; // roar, vd 0.2 = +20%
 }
 
+/** 1 map trong bản đồ đảo liên kết (data/maps.json, xem MapSelectScene) — mỗi map có bộ quái + boss cuối riêng. */
+export interface MapDef {
+  id: string;
+  name: string;
+  order: number;
+  theme_color: string; // hex string, dùng làm màu nền node trên MapSelectScene
+  enemyDataFile: string; // tên file trong src/data/ (vd "enemies.json") — resolve qua utils/MapData.ts, không import động trực tiếp
+  bossId: string; // tham chiếu bosses.json — boss cuối cùng (luôn isFinalBoss) của map này
+  difficultyMultiplier: number; // nhân thêm vào difficultyMultiplier gốc của SpawnSystem, map càng về sau càng khó hơn
+  unlockRequires: string | null; // id map phải clear trước, null = mở sẵn từ đầu
+}
+
 export interface CharacterDef {
   id: string;
   name: string;
@@ -138,12 +154,12 @@ export interface EquippedWeapon {
   fusedInto?: string;
 }
 
+/** Dùng cho GameOverScene — CHỈ trường hợp thua trận (HP về 0). Thắng trận (hạ Final Boss) đi qua VictoryScene, không dùng interface này. */
 export interface RunResult {
   survivalTimeMs: number;
   kills: number;
   coinEarned: number;
   highestCombo: number;
-  victory?: boolean; // true khi hạ được Boss, false/undefined = Game Over thường (HP về 0)
 }
 
 /** Mốc giết quái tích lũy qua nhiều ván (GDD mục 15) — thưởng Coin 1 lần khi đạt mốc. */

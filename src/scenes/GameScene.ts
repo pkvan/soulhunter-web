@@ -12,6 +12,7 @@ import { CombatSystem } from "@systems/CombatSystem";
 import { UpgradeSystem } from "@systems/UpgradeSystem";
 import { FusionSystem } from "@systems/FusionSystem";
 import { BossSystem } from "@systems/BossSystem";
+import { VictoryController } from "@systems/VictoryController";
 import { HUD } from "@ui/HUD";
 import { EventBus, GameEvents } from "@utils/EventBus";
 import dailyChallengesData from "@data/dailyChallenges.json";
@@ -20,16 +21,16 @@ import soulCorruptionData from "@data/soulCorruption.json";
 import { DailyChallengeDef, EliteConfig, SoulCorruptionConfig } from "@types/index";
 import { calculateCoinEarned } from "@utils/CoinFormula";
 import { hasClaimedDailyChallengeToday, markDailyChallengeClaimedToday } from "@utils/SaveData";
+import { getMapById, getEnemyDataForMap, markMapCleared, getNextMap } from "@utils/MapData";
 import { GAMEPLAY } from "@config/GameConfig";
 
 const dailyChallenges = dailyChallengesData as DailyChallengeDef[];
 const elite = eliteData as EliteConfig;
 const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
 
-// DEBUG TẠM THỜI: thay cho GAMEPLAY.BOSS_SPAWN_AT_MS thật (mặc định 5-10 phút) để test nhanh 2 boss
-// mà không phải đợi lâu. Boss 1 (Giant Skeleton, bosses.json[0]) spawn ở mốc này; Boss 2 (Orc Warlord,
-// bosses.json[1]) spawn ở mốc gấp đôi (nếu player còn sống và đã hạ xong Boss 1 trước đó).
-// SAU KHI TEST XONG: đổi bossSpawnThresholdsMs về giá trị thật, vd [GAMEPLAY.BOSS_SPAWN_AT_MS, GAMEPLAY.RUN_DURATION_MS - 60_000].
+// DEBUG TẠM THỜI: thay cho GAMEPLAY.BOSS_SPAWN_AT_MS thật (mặc định 5-10 phút) để test nhanh boss cuối
+// map mà không phải đợi lâu. Mỗi map chỉ có 1 boss cuối (mapDef.bossId, luôn isFinalBoss — xem MapData.ts),
+// spawn ở mốc này. SAU KHI TEST XONG: đổi về giá trị thật, vd GAMEPLAY.BOSS_SPAWN_AT_MS.
 const BOSS_SPAWN_DEBUG_MS = 12000;
 
 // Trần delta mỗi frame dùng để tính "thời gian chơi thực tế" (elapsedPlayMs). scene.time.now là clock
@@ -41,6 +42,7 @@ const MAX_FRAME_DELTA_MS = 100;
 
 interface GameSceneData {
   characterId: string;
+  mapId?: string; // id trong data/maps.json — quyết định bộ quái + boss cuối của ván, mặc định "forest" nếu thiếu
   dailyChallengeId?: string; // nếu có, ván này chạy dưới modifier Daily Challenge (xem MenuScene + GAMEPLAY GDD mục 15)
 }
 
@@ -55,12 +57,16 @@ export class GameScene extends Phaser.Scene {
   private fusionSystem!: FusionSystem;
   private upgradeSystem!: UpgradeSystem;
   private bossSystem!: BossSystem;
+  private victoryController!: VictoryController;
   private hud!: HUD;
   private wallsGroup!: Phaser.Physics.Arcade.StaticGroup;
   private lootChest!: LootChest;
   private elapsedPlayMs = 0; // thời gian chơi thực tế cộng dồn từ delta đã chặn trần — xem MAX_FRAME_DELTA_MS
   private kills = 0;
-  private bossesSpawnedCount = 0; // 0, 1, 2 — số boss đã spawn trong ván, xem BOSS_SPAWN_DEBUG_MS
+  private mapId = "forest"; // map đang chơi (xem create()) — dùng để chọn bộ quái/boss + markMapCleared() khi thắng
+  private mapBossId = "giant_skeleton"; // mapDef.bossId của map đang chơi — xem create()
+  private bossSpawned = false; // mỗi map chỉ có đúng 1 boss cuối (mapDef.bossId) — xem BOSS_SPAWN_DEBUG_MS
+  private isVictoryCinematicActive = false; // true trong suốt Boss Death Cinematic — chặn spawn quái mới, Pause, và Player chết (xem update()/onPlayerDied())
   private comboCount = 0;
   private highestCombo = 0;
   private lastKillAtMs = -Infinity;
@@ -78,7 +84,9 @@ export class GameScene extends Phaser.Scene {
   create(data: GameSceneData): void {
     this.elapsedPlayMs = 0;
     this.kills = 0;
-    this.bossesSpawnedCount = 0;
+    this.mapId = data.mapId ?? "forest";
+    this.bossSpawned = false;
+    this.isVictoryCinematicActive = false;
     this.comboCount = 0;
     this.highestCombo = 0;
     this.lastKillAtMs = -Infinity;
@@ -93,12 +101,21 @@ export class GameScene extends Phaser.Scene {
       ? dailyChallenges.find((c) => c.id === data.dailyChallengeId)
       : undefined;
 
+    const mapDef = getMapById(this.mapId) ?? getMapById("forest")!;
+    const mapEnemies = getEnemyDataForMap(mapDef);
+
     this.player = new Player(this, 480, 270, data.characterId ?? "hunter", this.activeChallenge?.playerDamageMultiplier ?? 1);
     this.poolManager = new PoolManager(this);
     this.spawnWalls();
-    this.spawnSystem = new SpawnSystem(this, this.poolManager, this.player, this.activeChallenge?.enemyHpMultiplier ?? 1);
+    this.spawnSystem = new SpawnSystem(
+      this, this.poolManager, this.player, mapEnemies,
+      this.activeChallenge?.enemyHpMultiplier ?? 1,
+      mapDef.difficultyMultiplier
+    );
+    this.mapBossId = mapDef.bossId;
     this.soulSystem = new SoulSystem(this, this.player);
-    this.bossSystem = new BossSystem(this, this.player, this.poolManager);
+    this.bossSystem = new BossSystem(this, this.player, this.poolManager, mapEnemies);
+    this.victoryController = new VictoryController(this);
     this.pickupSystem = new PickupSystem(this, this.poolManager, this.player, this.soulSystem);
     this.weaponSystem = new WeaponSystem(
       this, this.player, this.poolManager, this.soulSystem, this.bossSystem, (isElite) => this.registerKill(isElite)
@@ -131,7 +148,7 @@ export class GameScene extends Phaser.Scene {
     this.elapsedPlayMs += Math.min(delta, MAX_FRAME_DELTA_MS);
 
     this.player.update(delta);
-    this.spawnSystem.update(time, delta);
+    if (!this.isVictoryCinematicActive) this.spawnSystem.update(time, delta); // Boss Death Cinematic: không spawn quái mới
     this.weaponSystem.update(time, delta);
     this.soulSystem.update(delta);
     this.pickupSystem.update(time, delta);
@@ -160,29 +177,23 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // DEBUG TẠM THỜI — xem comment ở đầu file. Boss thứ N+1 chỉ spawn khi đã qua mốc thời gian riêng
-    // VÀ chưa có boss nào đang sống (đảm bảo Boss 2 chỉ xuất hiện sau khi Boss 1 bị hạ, không spawn chồng).
-    const bossSpawnThresholdsMs = [BOSS_SPAWN_DEBUG_MS, BOSS_SPAWN_DEBUG_MS * 2];
-    if (
-      this.bossesSpawnedCount < bossSpawnThresholdsMs.length &&
-      this.elapsedPlayMs >= bossSpawnThresholdsMs[this.bossesSpawnedCount] &&
-      !this.bossSystem.getBoss()
-    ) {
-      this.bossSystem.spawnBoss(this.bossesSpawnedCount);
-      this.bossesSpawnedCount += 1;
+    // DEBUG TẠM THỜI — xem comment ở đầu file. Mỗi map chỉ có 1 boss cuối (mapBossId, luôn isFinalBoss).
+    if (!this.isVictoryCinematicActive && !this.bossSpawned && this.elapsedPlayMs >= BOSS_SPAWN_DEBUG_MS && !this.bossSystem.getBoss()) {
+      this.bossSystem.spawnBoss(this.mapBossId);
+      this.bossSpawned = true;
       EventBus.emit(GameEvents.BOSS_SPAWNED);
     }
   }
 
   private onPlayerDied(): void {
+    if (this.isVictoryCinematicActive) return; // không cho Player "chết" trong lúc Boss Death Cinematic — xem VictoryController
     this.scene.stop("LevelUpScene"); // tránh card level-up đè lên màn hình Game Over nếu đang mở đúng lúc chết
     const survivalTimeMs = this.elapsedPlayMs;
     this.scene.start("GameOverScene", {
       survivalTimeMs,
       kills: this.kills,
       coinEarned: this.computeCoinEarned(false),
-      highestCombo: this.highestCombo,
-      victory: false
+      highestCombo: this.highestCombo
     });
   }
 
@@ -217,111 +228,36 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Final Boss (isFinalBoss: true, vd Orc Warlord) chết — KHÔNG rơi Loot Chest, đi thẳng cutscene chiến
-   * thắng chạy TUẦN TỰ 3 bước (bước sau chỉ bắt đầu khi bước trước hoàn tất hẳn, không song song). MỌI mốc
-   * chờ giữa các bước dùng setTimeout() THUẦN JAVASCRIPT (không phải scene.time.delayedCall) — lý do: sau
-   * khi Bước 2 set scene.time.timeScale = 0.06, bất kỳ scene.time.delayedCall nào lên lịch SAU thời điểm đó
-   * sẽ bị chính timeScale đó làm kéo dài giả (Clock nhân delta với timeScale trước khi cộng dồn elapsed của
-   * TimerEvent), khiến "chờ 3000ms" thực tế mất tới 3000/0.06 = 50000ms thật. setTimeout() nằm ngoài hoàn
-   * toàn hệ thời gian của Phaser nên luôn đúng mili-giây thật, bất kể timeScale đang là bao nhiêu.
-   *   Bước 0 (đã làm ở BossSystem.killBoss() → Boss.stopForDeathCutscene() TRƯỚC KHI emit event này):
-   *     boss đã đứng yên tuyệt đối — velocity 0, physics body tắt hẳn, mọi tween cũ đã huỷ, isDying=true
-   *     chặn update() — nên tại đây boss.sprite.x/y chắc chắn KHÔNG còn đổi nữa.
-   *   Bước 1 (hàm này): camera pan 0.5s tới đúng vị trí boss, KHÔNG đổi zoom — đợi pan xong (setTimeout 500ms,
-   *     lúc này timeScale vẫn còn 1 nên không có rủi ro lệch) mới sang bước 2.
-   *   Bước 2 (runFinalBossSlowMotionAndFade): slow-motion gần đứng hình + bọt khí quanh boss + alpha fade
-   *     dần đều, kéo dài ĐÚNG FINAL_BOSS_FADE_REAL_MS (3000ms) thật — mốc chuyển sang bước 3 là setTimeout
-   *     riêng, KHÔNG phải tween onComplete (tween chỉ lo phần hình ảnh, không phải nguồn chân lý về thời gian).
-   *   Bước 3 (finishFinalBossCutscene): trả timeScale, fade đen, chuyển GameOverScene victory:true.
+   * Final Boss (isFinalBoss: true) chết — KHÔNG rơi Loot Chest. Chặn spawn quái mới/Pause/Player chết ngay
+   * lập tức (isVictoryCinematicActive), rồi giao toàn bộ trình tự cinematic cho VictoryController (Zoom
+   * Camera → Slow Motion + Boss tan biến → Restore TimeScale) — xem systems/VictoryController.ts. GameScene
+   * chỉ xử lý phần SAU cinematic: markMapCleared + xác định map kế tiếp + chuyển VictoryScene.
    */
   private onFinalBossDefeated({ boss }: { boss: Boss; x: number; y: number }): void {
-    this.scene.stop("LevelUpScene"); // tránh card level-up đè lên cutscene chiến thắng
+    this.scene.stop("LevelUpScene"); // tránh card level-up đè lên cinematic chiến thắng
     // Phòng trường hợp LevelUpScene đang mở đúng lúc boss chết (đã tự pause GameScene trước đó) — resume
-    // lại ngay để tween/pan/timeScale cutscene bên dưới thực sự chạy, không bị đứng hình do GameScene còn pause.
+    // lại ngay để camera/timeScale cinematic bên dưới thực sự chạy, không bị đứng hình do GameScene còn pause.
     this.scene.resume();
 
-    const t0 = Date.now();
-    console.log(`[FinalBossCutscene] Bước 1 (camera pan ${GAMEPLAY.FINAL_BOSS_PAN_MS}ms) bắt đầu @ ${t0}`);
+    this.isVictoryCinematicActive = true;
+    this.hud.setPauseButtonEnabled(false);
 
-    this.cameras.main.stopFollow();
-    this.cameras.main.pan(boss.sprite.x, boss.sprite.y, GAMEPLAY.FINAL_BOSS_PAN_MS, "Sine.easeInOut");
-
-    setTimeout(() => {
-      const t1 = Date.now();
-      console.log(`[FinalBossCutscene] Bước 1 kết thúc @ ${t1} (đã trôi ${t1 - t0}ms, kỳ vọng ~${GAMEPLAY.FINAL_BOSS_PAN_MS}ms) — Bước 2 bắt đầu`);
-      this.runFinalBossSlowMotionAndFade(boss, t0);
-    }, GAMEPLAY.FINAL_BOSS_PAN_MS);
+    this.victoryController.playBossDeathCinematic(boss, () => this.onVictoryCinematicComplete());
   }
 
-  /** Bước 2: slow-motion gần đứng hình + bọt khí quanh boss (đứng yên từ bước 0) + boss tan biến dần đều, kéo dài ĐÚNG FINAL_BOSS_FADE_REAL_MS thật (mốc bằng setTimeout, không phải tween onComplete). */
-  private runFinalBossSlowMotionAndFade(boss: Boss, t0: number): void {
-    const t1 = Date.now();
-    this.time.timeScale = GAMEPLAY.FINAL_BOSS_SLOWMO_TIMESCALE;
-    this.physics.world.timeScale = GAMEPLAY.FINAL_BOSS_SLOWMO_TIMESCALE;
+  /** Cinematic đã xong (boss tan biến hoàn toàn, timeScale đã trả về 1) — ghi map cleared rồi chuyển VictoryScene. */
+  private onVictoryCinematicComplete(): void {
+    markMapCleared(this.mapId); // ghi trước khi chuyển scene — map tiếp theo mở khóa ngay khi quay lại MapSelectScene
+    const nextMap = getNextMap(this.mapId);
 
-    const bossX = boss.sprite.x;
-    const bossY = boss.sprite.y;
-    const bubbleTimer = setInterval(() => this.spawnFinalBossBubble(bossX, bossY), GAMEPLAY.FINAL_BOSS_BUBBLE_INTERVAL_MS);
-
-    // this.tweens KHÔNG phụ thuộc time.timeScale (TweenManager nhận delta thô từ vòng lặp game, không qua
-    // Clock đã bị hạ timeScale) nên duration ở đây chính là thời gian thật — nhưng đây CHỈ lo phần hình ảnh,
-    // KHÔNG dùng onComplete của tween này làm mốc chuyển bước (xem setTimeout riêng bên dưới).
-    this.tweens.add({
-      targets: boss.sprite,
-      alpha: 0,
-      duration: GAMEPLAY.FINAL_BOSS_FADE_REAL_MS,
-      ease: "Linear"
-    });
-
-    setTimeout(() => {
-      const t2 = Date.now();
-      console.log(`[FinalBossCutscene] Bước 2 kết thúc @ ${t2} (slow-motion+fade kéo dài ${t2 - t1}ms thật, kỳ vọng ~${GAMEPLAY.FINAL_BOSS_FADE_REAL_MS}ms) — Bước 3 bắt đầu`);
-      clearInterval(bubbleTimer);
-      this.finishFinalBossCutscene(boss, t0);
-    }, GAMEPLAY.FINAL_BOSS_FADE_REAL_MS);
-  }
-
-  /** Bước 3: boss đã tan biến hoàn toàn — trả timeScale, fade đen, rồi mới chuyển GameOverScene. */
-  private finishFinalBossCutscene(boss: Boss, t0: number): void {
-    this.time.timeScale = 1;
-    this.physics.world.timeScale = 1;
-    boss.destroy();
-
-    this.cameras.main.fadeOut(GAMEPLAY.FINAL_BOSS_FADE_OUT_MS, 0, 0, 0);
-    this.cameras.main.once("camerafadeoutcomplete", () => {
-      const t3 = Date.now();
-      console.log(`[FinalBossCutscene] Bước 3 kết thúc, chuyển GameOverScene @ ${t3} (TỔNG CỘNG ${t3 - t0}ms thật kể từ lúc boss chết)`);
-      const survivalTimeMs = this.elapsedPlayMs;
-      this.scene.start("GameOverScene", {
-        survivalTimeMs,
-        kills: this.kills,
-        coinEarned: this.computeCoinEarned(true),
-        highestCombo: this.highestCombo,
-        victory: true
-      });
-    });
-  }
-
-  /** 1 bọt khí nhỏ trôi nhẹ ra xung quanh rồi fade — placeholder Graphics cho tới khi có particle texture thật. */
-  private spawnFinalBossBubble(centerX: number, centerY: number): void {
-    const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-    const startDist = Phaser.Math.FloatBetween(0, 20);
-    const startX = centerX + Math.cos(angle) * startDist;
-    const startY = centerY + Math.sin(angle) * startDist;
-    const driftDist = Phaser.Math.FloatBetween(30, 60);
-
-    const bubble = this.add.circle(startX, startY, Phaser.Math.Between(2, 5), 0xbfefff, 0.5).setDepth(20);
-    bubble.setStrokeStyle(1, 0xffffff, 0.6);
-
-    this.tweens.add({
-      targets: bubble,
-      x: startX + Math.cos(angle) * driftDist,
-      y: startY + Math.sin(angle) * driftDist - Phaser.Math.Between(10, 30), // trôi hơi lên nhẹ, giống bọt khí nổi
-      scale: 1.4,
-      alpha: 0,
-      duration: Phaser.Math.Between(900, 1400),
-      ease: "Sine.easeOut",
-      onComplete: () => bubble.destroy()
+    this.scene.start("VictoryScene", {
+      characterId: this.player.characterId,
+      mapId: this.mapId,
+      nextMapId: nextMap?.id,
+      survivalTimeMs: this.elapsedPlayMs,
+      kills: this.kills,
+      coinEarned: this.computeCoinEarned(true),
+      highestCombo: this.highestCombo
     });
   }
 
@@ -433,5 +369,10 @@ export class GameScene extends Phaser.Scene {
   /** PauseScene "Play Again" đọc lại để restart đúng điều kiện ván hiện tại (giữ nguyên Daily Challenge nếu có). */
   public getActiveChallengeId(): string | undefined {
     return this.activeChallenge?.id;
+  }
+
+  /** PauseScene "Play Again" đọc lại để restart đúng map đang chơi. */
+  public getActiveMapId(): string {
+    return this.mapId;
   }
 }

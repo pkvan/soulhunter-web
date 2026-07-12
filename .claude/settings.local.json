@@ -23,7 +23,9 @@
       "Bash(mv \"./{docs,src/{config,scenes,entities,systems,data,ui,utils,types},public/assets/{sprites,audio,tilemaps}}/victorybound.mp3\" public/assets/audio/)",
       "Bash(rm -rf \"./{docs,src/{config,scenes,entities,systems,data,ui,utils,types},public/assets/{sprites,audio,tilemaps}}\" && find . -maxdepth 1 -name \"*{*\")",
       "Bash(rm -rf \"./{docs,src\")",
-      "Bash(echo \"done, exit: $?\")"
+      "Bash(echo \"done, exit: $?\")",
+      "Bash(python3 -)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

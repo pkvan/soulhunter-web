@@ -6,6 +6,7 @@ import weaponsData from "@data/weapons.json";
 import upgradesData from "@data/upgrades.json";
 import fusionsData from "@data/fusions.json";
 import { WeaponDef, UpgradeDef, FusionDef } from "@types/index";
+import { getMapById } from "@utils/MapData";
 
 const weapons = weaponsData as WeaponDef[];
 const upgrades = upgradesData as UpgradeDef[];
@@ -37,6 +38,9 @@ export class PauseScene extends Phaser.Scene {
 
     this.add.rectangle(480, 270, 960, 540, 0x000000, 0.7);
 
+    const mapName = getMapById(gameScene.getActiveMapId())?.name ?? "";
+    this.add.text(480, 18, mapName, { fontSize: "14px", color: "#9ca3af", fontStyle: "bold" }).setOrigin(0.5);
+
     this.renderLoadoutTray(player);
 
     const buttonY = 450;
@@ -53,8 +57,9 @@ export class PauseScene extends Phaser.Scene {
   private restartGame(gameScene: GameScene): void {
     const characterId = gameScene.getPlayer().characterId;
     const dailyChallengeId = gameScene.getActiveChallengeId();
+    const mapId = gameScene.getActiveMapId();
     this.scene.stop();
-    gameScene.scene.start("GameScene", { characterId, dailyChallengeId });
+    gameScene.scene.start("GameScene", { characterId, dailyChallengeId, mapId });
   }
 
   /** Thoát ván giữa chừng KHÔNG cộng Coin (chỉ GameOverScene tự nhiên mới cộng) — cần xác nhận trước vì mất tiến trình. */

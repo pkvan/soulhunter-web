@@ -1,12 +1,14 @@
 import Phaser from "phaser";
 import { BootScene } from "@scenes/BootScene";
 import { MenuScene } from "@scenes/MenuScene";
+import { MapSelectScene } from "@scenes/MapSelectScene";
 import { UnlockScene } from "@scenes/UnlockScene";
 import { GameScene } from "@scenes/GameScene";
 import { LevelUpScene } from "@scenes/LevelUpScene";
 import { PauseScene } from "@scenes/PauseScene";
 import { BossLootScene } from "@scenes/BossLootScene";
 import { GameOverScene } from "@scenes/GameOverScene";
+import { VictoryScene } from "@scenes/VictoryScene";
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -26,7 +28,7 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [BootScene, MenuScene, UnlockScene, GameScene, LevelUpScene, PauseScene, BossLootScene, GameOverScene]
+  scene: [BootScene, MenuScene, MapSelectScene, UnlockScene, GameScene, LevelUpScene, PauseScene, BossLootScene, GameOverScene, VictoryScene]
 };
 
 // Hằng số gameplay dùng chung — chỉnh ở đây thay vì rải rác trong code
@@ -67,14 +69,13 @@ export const GAMEPLAY = {
 
   LOOT_CHEST_COLLECT_RADIUS: 30, // khoảng cách 2 tâm được tính là player va chạm nhặt Loot Chest (rương chiến lợi phẩm boss giữa chừng) — xem GameScene.update()
 
-  // Cutscene khi hạ Final Boss (isFinalBoss: true trong bosses.json) — xem GameScene.onFinalBossDefeated().
-  // Chạy TUẦN TỰ 3 bước, bước sau chỉ bắt đầu khi bước trước hoàn tất hẳn (không chạy song song):
-  // (1) camera pan tới đúng vị trí boss, không đổi zoom — (2) slow-motion + bubble + fade dần theo REAL TIME
-  // (this.tweens không phụ thuộc time.timeScale nên duration ở đây chính là thời gian thật cảm nhận được,
-  // không cần bù trừ) — (3) trả timeScale, fade đen, chuyển GameOverScene.
-  FINAL_BOSS_PAN_MS: 500, // bước 1: camera lia mượt tới vị trí boss
-  FINAL_BOSS_SLOWMO_TIMESCALE: 0.06, // bước 2: gần như đứng hình, chỉ còn chuyển động rất nhẹ
-  FINAL_BOSS_FADE_REAL_MS: 3000, // bước 2: boss tan biến đều đặn trong ĐÚNG 3s thật — đây cũng là tổng thời lượng bước 2
-  FINAL_BOSS_BUBBLE_INTERVAL_MS: 120, // bước 2: nhịp spawn bọt khí quanh boss trong lúc tan biến
-  FINAL_BOSS_FADE_OUT_MS: 400 // bước 3: camera.fadeOut trước khi chuyển GameOverScene
+  // Boss Death Cinematic khi hạ Final Boss (isFinalBoss: true trong bosses.json) — xem systems/VictoryController.ts.
+  // Trình tự: Zoom camera (VICTORY_ZOOM_MS, timeScale vẫn 1) -> Slow Motion + boss tan biến (phần thời gian
+  // còn lại của VICTORY_CINEMATIC_TOTAL_MS, timeScale = VICTORY_SLOWMO_TIMESCALE) -> trả timeScale về 1.
+  // this.tweens KHÔNG phụ thuộc time.timeScale nên mọi duration ở đây là thời gian thật, không cần bù trừ.
+  VICTORY_ZOOM_LEVEL: 1.3, // zoom vừa phải, chỉ tạo cảm giác cinematic, không quá mạnh
+  VICTORY_ZOOM_MS: 400,
+  VICTORY_SLOWMO_TIMESCALE: 0.25, // 25% tốc độ bình thường (trong khoảng 20-30% yêu cầu)
+  VICTORY_CINEMATIC_TOTAL_MS: 3000, // tổng thời lượng cinematic thật, tính từ lúc boss chết tới lúc tan biến hoàn toàn
+  VICTORY_PARTICLE_COUNT: 8 // số đốm sáng "linh hồn thoát ra" bay lên trong lúc boss tan biến
 };

@@ -47,13 +47,13 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     unlockButton.on("pointerdown", () => this.scene.start("UnlockScene"));
 
-    const startButton = this.add.text(480, 360, "[ Click để bắt đầu ]", {
+    const startButton = this.add.text(480, 360, "[ Chọn Map ]", {
       fontSize: "22px",
       color: "#4ade80",
       fontStyle: "bold"
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     startButton.on("pointerdown", () => {
-      this.scene.start("GameScene", { characterId: getSelectedCharacterId() });
+      this.scene.start("MapSelectScene");
     });
 
     // Achievement (GDD mục 15): tiến độ giết quái tích lũy qua mọi ván, không phải trong 1 ván.

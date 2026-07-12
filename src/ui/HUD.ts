@@ -2,10 +2,14 @@ import Phaser from "phaser";
 import { Player } from "@entities/Player";
 import { BossSystem } from "@systems/BossSystem";
 import { EventBus, GameEvents } from "@utils/EventBus";
+import { renderWeaponIcon } from "@ui/WeaponIcon";
 import soulCorruptionData from "@data/soulCorruption.json";
-import { SoulCorruptionConfig } from "@types/index";
+import weaponsData from "@data/weapons.json";
+import fusionWeaponsData from "@data/fusionWeapons.json";
+import { SoulCorruptionConfig, WeaponDef } from "@types/index";
 
 const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
+const allWeaponDefs = [...(weaponsData as WeaponDef[]), ...(fusionWeaponsData as WeaponDef[])];
 
 /**
  * HUD hiển thị HP bar, thời gian sống, Kills — cố định trên màn hình (setScrollFactor(0)).
@@ -26,11 +30,21 @@ export class HUD {
   private bossNameText: Phaser.GameObjects.Text;
   private bossBarBg: Phaser.GameObjects.Rectangle;
   private bossBarFill: Phaser.GameObjects.Rectangle;
+  private bossHpText: Phaser.GameObjects.Text;
   private readonly bossBarWidth = 300;
   private readonly bossBarHeight = 14;
   private bossBarVisible = false;
 
   private bannerText: Phaser.GameObjects.Text;
+  private pauseButton: Phaser.GameObjects.Arc;
+
+  // Tray vũ khí đang trang bị (icon + level) — render lại từ player.equippedWeapons mỗi khi danh sách đổi
+  // (không phải mỗi frame, tránh tạo/hủy GameObject liên tục ở 60fps), xem update()/renderWeaponTray().
+  private weaponTrayContainer: Phaser.GameObjects.Container;
+  private weaponTraySignature = "";
+  private readonly weaponIconSize = 32;
+  private readonly weaponTrayX = 16;
+  private readonly weaponTrayY = 500;
 
   // Soul Corruption (Dark Soul pickup, GDD mục 18): thanh countdown bám theo đầu player (world-space,
   // KHÔNG scrollFactor(0) — phải trôi theo player qua camera) + glow pulse quanh player trong lúc active.
@@ -68,6 +82,9 @@ export class HUD {
       .setOrigin(0.5, 0).setScrollFactor(0).setVisible(false);
     this.bossBarFill = scene.add.rectangle(bossBarX, 28, this.bossBarWidth, this.bossBarHeight, 0xef4444)
       .setOrigin(0.5, 0).setScrollFactor(0).setVisible(false);
+    this.bossHpText = scene.add.text(bossBarX, 28 + this.bossBarHeight / 2, "", {
+      fontSize: "11px", color: "#ffffff", fontStyle: "bold"
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(1).setVisible(false);
 
     this.bannerText = scene.add.text(scene.cameras.main.width / 2, scene.cameras.main.height / 2, "", {
       fontSize: "30px", color: "#ff4444", fontStyle: "bold", align: "center"
@@ -89,6 +106,9 @@ export class HUD {
       scene.scene.pause();
       scene.scene.launch("PauseScene");
     });
+    this.pauseButton = pauseBg;
+
+    this.weaponTrayContainer = scene.add.container(0, 0).setScrollFactor(0);
 
     // Glow phía sau player (depth âm, giống eliteGlow của Enemy) — chỉ hiện + pulse trong lúc Corruption active.
     this.corruptionGlow = scene.add.circle(player.sprite.x, player.sprite.y, 26, 0x9d4edd, 0.25)
@@ -110,6 +130,13 @@ export class HUD {
     EventBus.on(GameEvents.BOSS_DEFEATED, this.hideBossBar, this);
     EventBus.off(GameEvents.PLAYER_DIED, this.hideBossBar, this);
     EventBus.on(GameEvents.PLAYER_DIED, this.hideBossBar, this);
+  }
+
+  /** GameScene gọi để tắt/bật nút Pause (vd trong lúc Boss Death Cinematic) — HUD chỉ expose toggle, không biết khái niệm "Victory". */
+  public setPauseButtonEnabled(enabled: boolean): void {
+    if (enabled) this.pauseButton.setInteractive({ useHandCursor: true });
+    else this.pauseButton.disableInteractive();
+    this.pauseButton.setAlpha(enabled ? 1 : 0.4);
   }
 
   /**
@@ -149,10 +176,47 @@ export class HUD {
       if (boss) {
         const bossHpPercent = Phaser.Math.Clamp(boss.currentHp / boss.maxHp, 0, 1);
         this.bossBarFill.width = this.bossBarWidth * bossHpPercent;
+        this.bossHpText.setText(`${Math.max(0, Math.ceil(boss.currentHp))} / ${Math.ceil(boss.maxHp)}`);
       }
     }
 
     this.updateCorruptionVisuals(corruptionRemainingMs);
+    this.updateWeaponTray();
+  }
+
+  /**
+   * Render lại tray icon vũ khí CHỈ KHI danh sách/level thay đổi (so chữ ký weaponId+level ghép chuỗi) —
+   * tránh tạo/hủy GameObject mỗi frame ở 60fps trong khi list hầu như không đổi giữa 2 lần level up.
+   * Đọc thẳng player.equippedWeapons, KHÔNG if/switch theo từng weaponId cụ thể — vũ khí mới (kể cả sau
+   * này thêm Hammer/Volley...) tự động xuất hiện miễn có mặt trong weapons.json/fusionWeapons.json.
+   */
+  private updateWeaponTray(): void {
+    const signature = this.player.equippedWeapons.map((w) => `${w.weaponId}:${w.level}`).join(",");
+    if (signature === this.weaponTraySignature) return;
+    this.weaponTraySignature = signature;
+
+    this.weaponTrayContainer.removeAll(true);
+
+    const gap = 8;
+    this.player.equippedWeapons.forEach((eq, i) => {
+      const def = allWeaponDefs.find((w) => w.id === eq.weaponId);
+      if (!def) return;
+
+      const x = this.weaponTrayX + this.weaponIconSize / 2 + i * (this.weaponIconSize + gap);
+      const y = this.weaponTrayY;
+
+      const icon = renderWeaponIcon(this.scene, x, y, def, this.weaponIconSize);
+      this.weaponTrayContainer.add(icon);
+
+      const badgeBg = this.scene.add.circle(
+        x + this.weaponIconSize / 2 - 4, y + this.weaponIconSize / 2 - 4, 8, 0x111827, 0.9
+      ).setStrokeStyle(1, 0xffffff, 0.6);
+      const badgeText = this.scene.add.text(
+        x + this.weaponIconSize / 2 - 4, y + this.weaponIconSize / 2 - 4, `${eq.level}`,
+        { fontSize: "9px", color: "#ffffff", fontStyle: "bold" }
+      ).setOrigin(0.5);
+      this.weaponTrayContainer.add([badgeBg, badgeText]);
+    });
   }
 
   /** Theo dõi vị trí player MỖI FRAME (bar/glow world-space, không cố định màn hình) — xem field comment ở trên. */
@@ -205,6 +269,7 @@ export class HUD {
     this.bossNameText.setVisible(true);
     this.bossBarBg.setVisible(true);
     this.bossBarFill.setVisible(true);
+    this.bossHpText.setVisible(true);
 
     this.showBanner(`⚠ ${boss.name.toUpperCase()} XUẤT HIỆN`, colorCss);
   }
@@ -214,6 +279,7 @@ export class HUD {
     this.bossNameText.setVisible(false);
     this.bossBarBg.setVisible(false);
     this.bossBarFill.setVisible(false);
+    this.bossHpText.setVisible(false);
   }
 
   /** Banner cảnh báo giữa màn hình: scale-in rồi giữ 1 lúc rồi fade-out, kèm rung màn hình nhẹ. */

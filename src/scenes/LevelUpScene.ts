@@ -1,14 +1,13 @@
 import Phaser from "phaser";
 import { GameScene } from "@scenes/GameScene";
 import { UpgradeSystem } from "@systems/UpgradeSystem";
-import { LevelUpCard } from "@ui/LevelUpCard";
+import { LevelUpCard, CardData } from "@ui/LevelUpCard";
 import { EventBus, GameEvents } from "@utils/EventBus";
+import { Player } from "@entities/Player";
 import fusionsData from "@data/fusions.json";
 import { FusionDef, UpgradeDef, UpgradeChoice, WeaponChoice } from "@types/index";
 
 const fusions = fusionsData as FusionDef[];
-
-type CardData = UpgradeChoice | { fusion: true; fusionId: string; def: FusionDef };
 
 /**
  * Chạy song song GameScene (this.scene.launch, không stop GameScene)
@@ -61,10 +60,10 @@ export class LevelUpScene extends Phaser.Scene {
       .rectangle(centerX, centerY, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.6)
       .setDepth(0);
 
+    const player = gameScene.getPlayer();
+
     choices.forEach((choice, index) => {
-      const cardData: CardData = "fusion" in choice
-        ? { ...choice, def: fusions.find((f) => f.id === choice.fusionId)! }
-        : choice;
+      const cardData = this.buildCardData(choice, player);
 
       const card = new LevelUpCard(this, startX + index * spacing, centerY, cardData, () => {
         this.selectChoice(choice, gameScene, upgradeSystem);
@@ -72,6 +71,20 @@ export class LevelUpScene extends Phaser.Scene {
       card.container.setDepth(1);
       this.cards.push(card);
     });
+  }
+
+  /** Bổ sung currentLevel/currentStack (chỉ để hiển thị Card, không ảnh hưởng logic UpgradeSystem) — tách hàm riêng để TS narrow đúng type theo từng nhánh, tránh lỗi suy luận type khi viết ternary lồng. */
+  private buildCardData(choice: UpgradeChoice, player: Player): CardData {
+    if ("fusion" in choice && choice.fusion) {
+      return { ...choice, def: fusions.find((f) => f.id === choice.fusionId)! };
+    }
+    if ("weapon" in choice && choice.weapon) {
+      const currentLevel = player.equippedWeapons.find((w) => w.weaponId === choice.weaponId)?.level;
+      return { ...choice, currentLevel };
+    }
+    const upgradeChoice = choice as UpgradeDef;
+    const currentStack = player.appliedUpgrades.filter((id) => id === upgradeChoice.id).length;
+    return { ...upgradeChoice, currentStack };
   }
 
   private selectChoice(choice: UpgradeChoice, gameScene: GameScene, upgradeSystem: UpgradeSystem): void {

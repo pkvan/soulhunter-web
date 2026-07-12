@@ -1,0 +1,7 @@
+[
+  { "id": "skeleton_warrior", "name": "Skeleton Warrior", "hp": 14, "moveSpeed": 65, "damage": 9, "soulValue": 2, "flag": "ground", "tintColor": "0xe5e7eb" },
+  { "id": "zombie", "name": "Zombie", "hp": 22, "moveSpeed": 40, "damage": 10, "soulValue": 2, "flag": "ground", "tintColor": "0x65a30d" },
+  { "id": "wraith", "name": "Wraith", "hp": 13, "moveSpeed": 75, "damage": 7, "soulValue": 2, "flag": "phasing", "tintColor": "0x8b5cf6", "alpha": 0.7, "meleeDodgeChance": 0.4 },
+  { "id": "bone_golem", "name": "Bone Golem", "hp": 42, "moveSpeed": 45, "damage": 14, "soulValue": 3, "flag": "ground", "tintColor": "0xa8a29e" },
+  { "id": "crow", "name": "Crow", "hp": 7, "moveSpeed": 150, "damage": 5, "soulValue": 1, "flag": "flying", "tintColor": "0x1f2937", "movementPattern": "zigzag" }
+]

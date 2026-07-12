@@ -2,13 +2,11 @@ import Phaser from "phaser";
 import { Boss } from "@entities/Boss";
 import { Player } from "@entities/Player";
 import { PoolManager } from "@systems/PoolManager";
-import enemiesData from "@data/enemies.json";
 import bossesData from "@data/bosses.json";
 import { EnemyDef, BossDef } from "@types/index";
 import { EventBus, GameEvents } from "@utils/EventBus";
 import { GAMEPLAY } from "@config/GameConfig";
 
-const enemies = enemiesData as EnemyDef[];
 const bosses = bossesData as BossDef[];
 
 /**
@@ -23,13 +21,14 @@ export class BossSystem {
   constructor(
     private scene: Phaser.Scene,
     private player: Player,
-    private poolManager: PoolManager
+    private poolManager: PoolManager,
+    private enemies: EnemyDef[] // bộ quái theo map hiện tại (xem utils/MapData.ts) — dùng cho Summon skill, thay cho import enemies.json cố định
   ) {}
 
-  /** bossIndex: thứ tự trong bosses.json — 0 = boss đầu tiên trong ván (Giant Skeleton), 1 = boss thứ 2 (Orc Warlord). */
-  spawnBoss(bossIndex: number): void {
+  /** bossId: tham chiếu bosses.json — xác định qua mapDef.bossId của map đang chơi (xem GameScene + utils/MapData.ts). */
+  spawnBoss(bossId: string): void {
     if (this.boss) return; // đã có boss, tránh spawn chồng
-    const bossDef = bosses[bossIndex];
+    const bossDef = bosses.find((b) => b.id === bossId);
     if (!bossDef) return;
 
     const { x, y } = this.getSpawnPositionOutsideCamera();
@@ -115,7 +114,7 @@ export class BossSystem {
 
       const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
       const spawnDist = 60;
-      const def = enemies[Phaser.Math.Between(0, enemies.length - 1)];
+      const def = this.enemies[Phaser.Math.Between(0, this.enemies.length - 1)];
       enemy.spawn(boss.sprite.x + Math.cos(angle) * spawnDist, boss.sprite.y + Math.sin(angle) * spawnDist, def, 1);
     }
   }
