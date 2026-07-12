@@ -46,6 +46,27 @@ export interface PickupDef {
   healPercent?: number; // chỉ heal_potion — % maxHp hồi lại
 }
 
+/** Elite Enemy (roll ngẫu nhiên khi spawn, xem SpawnSystem) — HP/scale lớn hơn, luôn thưởng thêm Coin khi giết. */
+export interface EliteConfig {
+  eliteChanceBase: number;
+  eliteChancePerDifficulty: number; // cộng thêm vào eliteChance theo mỗi điểm difficultyMultiplier vượt quá 1
+  eliteChanceMax: number;
+  eliteHpMultiplier: number;
+  eliteScale: number;
+  eliteGlowColor: string; // hex string, Number(color)
+  eliteCoinBonus: number;
+}
+
+/** Dark Soul (Soul Corruption) — chỉ rơi từ Elite Enemy chết, nhặt vào kích hoạt buff damage tạm thời + tăng tốc độ spawn quái. */
+export interface SoulCorruptionConfig {
+  darkSoulDropChance: number;
+  darkSoulValueMultiplier: number; // nhân vào enemy.def.soulValue gốc khi rơi Dark Soul
+  darkSoulColor: string;
+  corruptionDamageBonus: number; // cộng thẳng vào player.stats.damageMultiplier trong lúc active
+  corruptionDurationMs: number;
+  corruptionSpawnRateMultiplier: number; // nhân vào spawnIntervalMs của SpawnSystem trong lúc active (giảm = spawn dồn dập hơn)
+}
+
 export interface BossDef {
   id: string;
   name: string;
@@ -91,6 +112,7 @@ export interface PermanentUpgradeDef {
   value: number;
   baseCostCoin: number;
   costMultiplier: number; // giá nhân lên mỗi lần đã mua, vd 1.3 = +30%/lần
+  maxPurchases: number; // giới hạn số lần mua tối đa — chặn vỡ balance nếu Coin tích lũy nhiều về sau
 }
 
 export interface PlayerStats {

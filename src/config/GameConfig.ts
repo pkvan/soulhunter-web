@@ -4,6 +4,7 @@ import { MenuScene } from "@scenes/MenuScene";
 import { UnlockScene } from "@scenes/UnlockScene";
 import { GameScene } from "@scenes/GameScene";
 import { LevelUpScene } from "@scenes/LevelUpScene";
+import { PauseScene } from "@scenes/PauseScene";
 import { GameOverScene } from "@scenes/GameOverScene";
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
@@ -24,7 +25,7 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [BootScene, MenuScene, UnlockScene, GameScene, LevelUpScene, GameOverScene]
+  scene: [BootScene, MenuScene, UnlockScene, GameScene, LevelUpScene, PauseScene, GameOverScene]
 };
 
 // Hằng số gameplay dùng chung — chỉnh ở đây thay vì rải rác trong code
@@ -35,9 +36,20 @@ export const GAMEPLAY = {
   DIFFICULTY_RAMP_ACCELERATION_AT_MS: 5 * 60 * 1000, // trước mốc này ramp tuyến tính chậm, sau mốc này ramp theo cấp số nhân nhẹ (dồn khó trước Boss)
   DIFFICULTY_RAMP_EARLY_STEP: 0.08, // mỗi nấc trước mốc tăng tốc (chậm hơn 0.1 cũ — đầu game giết nhanh, cảm giác mạnh lên rõ)
   DIFFICULTY_RAMP_LATE_GROWTH_RATE: 1.06, // sau mốc tăng tốc, mỗi nấc lại nhân bước tăng thêm 6% — cấp số nhân nhẹ
+  MAX_LEVEL: 30, // player.gainSoul() chặn level thêm khi đạt mốc này, soul dư đổi thành bonusCoinFromOverflowSoul
   MAGNET_BASE_RADIUS: 40,
   ENEMY_PLAYER_COLLISION_RADIUS: 20, // khoảng cách 2 tâm sprite được tính là va chạm
   PICKUP_COLLECT_RADIUS: 24, // khoảng cách 2 tâm sprite được tính là player nhặt được Pickup (Heal Potion/Magnet Orb)
+
+  // Feedback khi player nhận damage (Player.takeDamage) — flash đỏ + screen shake, mạnh hơn nếu đòn đủ nặng.
+  PLAYER_HIT_FLASH_MS: 100,
+  PLAYER_HIT_FLASH_COLOR: 0xff0000,
+  PLAYER_HIT_SHAKE_MIN_PERCENT: 0.02, // bỏ qua shake nếu damage < 2% Max HP (vd DOT tick nhỏ lẻ) để tránh rung liên tục
+  PLAYER_HIT_SHAKE_DURATION_MS: 100,
+  PLAYER_HIT_SHAKE_INTENSITY: 0.005,
+  PLAYER_HIT_BIG_THRESHOLD_PERCENT: 0.15, // đòn > 15% Max HP coi là "nặng", shake mạnh hơn
+  PLAYER_HIT_BIG_SHAKE_DURATION_MS: 200,
+  PLAYER_HIT_BIG_SHAKE_INTENSITY: 0.015,
   ENEMY_HIT_COOLDOWN_MS: 500, // mỗi enemy chỉ gây damage cho player tối đa 1 lần/khoảng thời gian này
   PROJECTILE_HIT_RADIUS: 20, // khoảng cách 2 tâm sprite được tính là projectile trúng enemy
 

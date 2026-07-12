@@ -159,8 +159,9 @@ export class UnlockScene extends Phaser.Scene {
     permanentUpgrades.forEach((def, index) => {
       const y = startY + index * rowHeight;
       const count = getPermanentUpgradeCount(def.id);
+      const isMaxed = count >= def.maxPurchases;
       const cost = this.calculateUpgradeCost(def, count);
-      const affordable = coin >= cost;
+      const affordable = !isMaxed && coin >= cost;
 
       const bg = this.add.rectangle(480, y, 700, rowHeight - 16, 0x1f2937).setStrokeStyle(1, 0x374151);
 
@@ -168,9 +169,23 @@ export class UnlockScene extends Phaser.Scene {
         fontSize: "18px", color: "#ffffff", fontStyle: "bold"
       }).setOrigin(0, 0.5);
 
-      const countText = this.add.text(200, y + 22, `Đã mua: ${count} lần`, {
+      const countText = this.add.text(200, y + 22, `Đã mua: ${count}/${def.maxPurchases} lần`, {
         fontSize: "13px", color: "#9ca3af"
       }).setOrigin(0, 0.5);
+
+      this.contentContainer.add([bg, nameText, countText]);
+
+      if (isMaxed) {
+        // Đạt giới hạn mua — hiện icon check thay vì giá tiền, không cho bấm nữa.
+        const checkIcon = this.add.text(730, y, "✓", {
+          fontSize: "22px", color: "#4ade80", fontStyle: "bold"
+        }).setOrigin(0.5);
+        const maxText = this.add.text(780, y, "MAX", {
+          fontSize: "13px", color: "#4ade80", fontStyle: "bold"
+        }).setOrigin(0.5);
+        this.contentContainer.add([checkIcon, maxText]);
+        return;
+      }
 
       const costText = this.add.text(680, y, `${cost} Coin`, {
         fontSize: "16px", color: "#fbbf24"
@@ -191,7 +206,7 @@ export class UnlockScene extends Phaser.Scene {
         });
       }
 
-      this.contentContainer.add([bg, nameText, countText, costText, buyButton]);
+      this.contentContainer.add([costText, buyButton]);
     });
   }
 

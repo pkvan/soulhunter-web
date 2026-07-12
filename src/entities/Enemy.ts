@@ -1,5 +1,8 @@
 import Phaser from "phaser";
-import { EnemyDef } from "@types/index";
+import { EnemyDef, EliteConfig } from "@types/index";
+import eliteData from "@data/elite.json";
+
+const elite = eliteData as EliteConfig;
 
 /**
  * Enemy được PoolManager tái sử dụng — dùng spawn()/despawn() thay vì tạo/hủy object.
@@ -10,6 +13,7 @@ export class Enemy {
   public currentHp = 0;
   public active = false;
   public lastHitPlayerAt = 0;
+  public isElite = false;
 
   // Status effect đơn giản dùng chung cho các vũ khí fusion (slow/stun + damage-over-time) —
   // xem WeaponSystem.applyStatusEffects(). Không track riêng "poison"/"burn"/"freeze" vì cơ chế
@@ -29,17 +33,26 @@ export class Enemy {
   // Lệch pha ngẫu nhiên cho di chuyển zigzag (vd Bat) để nhiều con cùng loại không lắc đồng bộ — xem update().
   private zigzagPhase = 0;
 
+  // Vòng glow theo sau Elite Enemy (xem GDD mục 18) — tạo sẵn 1 lần, chỉ show/hide + move theo sprite
+  // thay vì tạo/hủy GameObject mỗi lần spawn.
+  private eliteGlow: Phaser.GameObjects.Arc;
+
   constructor(private scene: Phaser.Scene) {
     // TODO: texture key placeholder, đổi theo def.id khi có sprite thật
     this.sprite = scene.physics.add.sprite(-1000, -1000, "enemy_placeholder");
     this.sprite.setActive(false).setVisible(false);
+
+    this.eliteGlow = scene.add.circle(-1000, -1000, 22, Number(elite.eliteGlowColor), 0.35);
+    this.eliteGlow.setVisible(false).setDepth(-1);
   }
 
-  spawn(x: number, y: number, def: EnemyDef, difficultyMultiplier = 1): void {
+  spawn(x: number, y: number, def: EnemyDef, difficultyMultiplier = 1, isElite = false): void {
     this.def = def;
-    this.currentHp = def.hp * difficultyMultiplier;
+    this.isElite = isElite;
+    this.currentHp = def.hp * difficultyMultiplier * (isElite ? elite.eliteHpMultiplier : 1);
     this.sprite.setPosition(x, y);
     this.sprite.setActive(true).setVisible(true);
+    this.sprite.setScale(isElite ? elite.eliteScale : 1);
     this.active = true;
     this.lastHitPlayerAt = 0;
     this.slowFactor = 0;
@@ -58,13 +71,33 @@ export class Enemy {
     else this.sprite.clearTint();
     this.sprite.setAlpha(def.alpha ?? 1);
     // TODO: nếu def.flag === "phasing" (Ghost) -> tắt collision với vật cản, giữ collision với player/projectile
+
+    this.scene.tweens.killTweensOf(this.eliteGlow);
+    if (isElite) {
+      this.eliteGlow.setPosition(x, y).setScale(1).setVisible(true);
+      this.scene.tweens.add({
+        targets: this.eliteGlow,
+        scale: 1.3,
+        duration: 500,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut"
+      });
+    } else {
+      this.eliteGlow.setVisible(false);
+    }
   }
 
   despawn(): void {
     this.active = false;
+    this.isElite = false;
     this.sprite.setActive(false).setVisible(false);
     this.sprite.setVelocity(0, 0);
     this.sprite.setPosition(-1000, -1000);
+    this.sprite.setScale(1);
+
+    this.scene.tweens.killTweensOf(this.eliteGlow);
+    this.eliteGlow.setVisible(false).setPosition(-1000, -1000);
   }
 
   takeDamage(amount: number): boolean {
@@ -119,5 +152,7 @@ export class Enemy {
     }
 
     this.sprite.setVelocity(vx, vy);
+
+    if (this.isElite) this.eliteGlow.setPosition(this.sprite.x, this.sprite.y);
   }
 }

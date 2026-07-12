@@ -1,0 +1,8 @@
+{
+  "darkSoulDropChance": 0.4,
+  "darkSoulValueMultiplier": 1.5,
+  "darkSoulColor": "0x8b5cf6",
+  "corruptionDamageBonus": 0.5,
+  "corruptionDurationMs": 10000,
+  "corruptionSpawnRateMultiplier": 0.5
+}

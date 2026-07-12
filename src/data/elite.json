@@ -1,0 +1,9 @@
+{
+  "eliteChanceBase": 0.05,
+  "eliteChancePerDifficulty": 0.01,
+  "eliteChanceMax": 0.35,
+  "eliteHpMultiplier": 3,
+  "eliteScale": 1.3,
+  "eliteGlowColor": "0xffaa00",
+  "eliteCoinBonus": 5
+}

@@ -16,7 +16,9 @@ import weaponsData from "@data/weapons.json";
 import upgradesData from "@data/upgrades.json";
 import bossesData from "@data/bosses.json";
 import dailyChallengesData from "@data/dailyChallenges.json";
-import { FusionDef, WeaponDef, UpgradeDef, BossDef, DailyChallengeDef } from "@types/index";
+import eliteData from "@data/elite.json";
+import soulCorruptionData from "@data/soulCorruption.json";
+import { FusionDef, WeaponDef, UpgradeDef, BossDef, DailyChallengeDef, EliteConfig, SoulCorruptionConfig } from "@types/index";
 import { calculateCoinEarned } from "@utils/CoinFormula";
 import { hasClaimedDailyChallengeToday, markDailyChallengeClaimedToday } from "@utils/SaveData";
 
@@ -29,6 +31,8 @@ const weapons = weaponsData as WeaponDef[];
 const upgrades = upgradesData as UpgradeDef[];
 const bosses = bossesData as BossDef[];
 const dailyChallenges = dailyChallengesData as DailyChallengeDef[];
+const elite = eliteData as EliteConfig;
+const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
 
 // DEBUG TẠM THỜI: thay cho GAMEPLAY.BOSS_SPAWN_AT_MS thật (mặc định 5-10 phút) để test nhanh 2 boss
 // mà không phải đợi lâu. Boss 1 (Giant Skeleton, bosses.json[0]) spawn ở mốc này; Boss 2 (Orc Warlord,
@@ -69,6 +73,9 @@ export class GameScene extends Phaser.Scene {
   private lastKillAtMs = -Infinity;
   private readonly COMBO_RESET_MS = 2000; // không giết thêm trong khoảng này thì lần giết tiếp theo reset combo về 1
   private activeChallenge?: DailyChallengeDef;
+  private bonusCoinFromElites = 0; // cộng thẳng vào coinEarned cuối ván, xem registerKill() + computeCoinEarned()
+  private corruptionActiveUntilTime = -Infinity; // "time" clock (giống SpawnSystem), xem activateCorruption()
+  private corruptionBonusApplied = false; // tránh cộng damageMultiplier lặp lại nếu nhặt nhiều Dark Soul liên tiếp trong lúc buff đang active
 
   constructor() {
     super("GameScene");
@@ -81,6 +88,9 @@ export class GameScene extends Phaser.Scene {
     this.comboCount = 0;
     this.highestCombo = 0;
     this.lastKillAtMs = -Infinity;
+    this.bonusCoinFromElites = 0;
+    this.corruptionActiveUntilTime = -Infinity;
+    this.corruptionBonusApplied = false;
 
     // TODO: khởi tạo tilemap/background Forest lặp lại theo camera (map vô tận)
 
@@ -95,7 +105,7 @@ export class GameScene extends Phaser.Scene {
     this.bossSystem = new BossSystem(this, this.player, this.poolManager);
     this.pickupSystem = new PickupSystem(this, this.poolManager, this.player, this.soulSystem);
     this.weaponSystem = new WeaponSystem(
-      this, this.player, this.poolManager, this.soulSystem, this.bossSystem, () => this.registerKill()
+      this, this.player, this.poolManager, this.soulSystem, this.bossSystem, (isElite) => this.registerKill(isElite)
     );
     this.combatSystem = new CombatSystem(this, this.player, this.poolManager);
     this.fusionSystem = new FusionSystem();
@@ -132,7 +142,16 @@ export class GameScene extends Phaser.Scene {
     this.pickupSystem.update(time, delta);
     this.combatSystem.update(time, delta);
     this.bossSystem.update(time, delta);
-    this.hud.update(this.elapsedPlayMs);
+
+    if (this.soulSystem.consumeDarkSoulPickup()) {
+      this.activateCorruption(time);
+    }
+    if (this.corruptionBonusApplied && time >= this.corruptionActiveUntilTime) {
+      this.player.stats.damageMultiplier -= soulCorruption.corruptionDamageBonus;
+      this.corruptionBonusApplied = false;
+    }
+
+    this.hud.update(this.elapsedPlayMs, Math.max(0, this.corruptionActiveUntilTime - time));
 
     // DEBUG TẠM THỜI — xem comment ở đầu file. Boss thứ N+1 chỉ spawn khi đã qua mốc thời gian riêng
     // VÀ chưa có boss nào đang sống (đảm bảo Boss 2 chỉ xuất hiện sau khi Boss 1 bị hạ, không spawn chồng).
@@ -180,19 +199,24 @@ export class GameScene extends Phaser.Scene {
   /**
    * Coin cuối ván — nếu đang chơi Daily Challenge VÀ chưa nhận thưởng nhân hệ số hôm nay thì áp dụng
    * coinRewardMultiplier rồi đánh dấu đã nhận (GDD mục 15: chơi lại thoải mái trong ngày nhưng chỉ tính
-   * thưởng nhân hệ số 1 lần/ngày, tránh farm Coin bằng cách chơi Daily Challenge liên tục).
+   * thưởng nhân hệ số 1 lần/ngày, tránh farm Coin bằng cách chơi Daily Challenge liên tục). Coin bonus
+   * từ Elite Enemy (GDD mục 18) và soul dư sau khi đạt Max Level cộng thẳng vào sau cùng, không nhân
+   * theo Daily Challenge multiplier.
    */
   private computeCoinEarned(victory: boolean): number {
+    let coinEarned: number;
     if (this.activeChallenge && !hasClaimedDailyChallengeToday()) {
-      const coinEarned = calculateCoinEarned(this.kills, this.elapsedPlayMs, victory, this.activeChallenge.coinRewardMultiplier);
+      coinEarned = calculateCoinEarned(this.kills, this.elapsedPlayMs, victory, this.activeChallenge.coinRewardMultiplier);
       markDailyChallengeClaimedToday();
-      return coinEarned;
+    } else {
+      coinEarned = calculateCoinEarned(this.kills, this.elapsedPlayMs, victory);
     }
-    return calculateCoinEarned(this.kills, this.elapsedPlayMs, victory);
+    return coinEarned + this.bonusCoinFromElites + this.player.bonusCoinFromOverflowSoul;
   }
 
-  public registerKill(): void {
+  public registerKill(isElite = false): void {
     this.kills += 1;
+    if (isElite) this.bonusCoinFromElites += elite.eliteCoinBonus;
 
     // Combo: chuỗi kill liên tiếp trong COMBO_RESET_MS — quá khoảng này thì lần giết tiếp theo bắt đầu lại từ 1.
     if (this.elapsedPlayMs - this.lastKillAtMs <= this.COMBO_RESET_MS) {
@@ -202,6 +226,20 @@ export class GameScene extends Phaser.Scene {
     }
     this.lastKillAtMs = this.elapsedPlayMs;
     this.highestCombo = Math.max(this.highestCombo, this.comboCount);
+  }
+
+  /**
+   * Soul Corruption (Dark Soul pickup, GDD mục 18): +damageMultiplier tạm thời (chỉ cộng 1 lần, nhặt
+   * thêm Dark Soul trong lúc đang active chỉ gia hạn thời gian chứ không cộng chồng) + báo SpawnSystem
+   * tăng tốc độ spawn trong cùng khoảng thời gian.
+   */
+  private activateCorruption(time: number): void {
+    if (!this.corruptionBonusApplied) {
+      this.player.stats.damageMultiplier += soulCorruption.corruptionDamageBonus;
+      this.corruptionBonusApplied = true;
+    }
+    this.corruptionActiveUntilTime = time + soulCorruption.corruptionDurationMs;
+    this.spawnSystem.activateCorruption(time, soulCorruption.corruptionDurationMs);
   }
 
   public getPlayer(): Player {
@@ -218,6 +256,11 @@ export class GameScene extends Phaser.Scene {
 
   public getBossSystem(): BossSystem {
     return this.bossSystem;
+  }
+
+  /** PauseScene "Play Again" đọc lại để restart đúng điều kiện ván hiện tại (giữ nguyên Daily Challenge nếu có). */
+  public getActiveChallengeId(): string | undefined {
+    return this.activeChallenge?.id;
   }
 
   /** DEBUG TẠM: xem comment ở đầu file. */

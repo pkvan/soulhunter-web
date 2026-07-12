@@ -90,6 +90,7 @@ export class UpgradeSystem {
   applyUpgrade(def: UpgradeDef): void {
     const current = this.player.stats[def.stat] ?? 0;
     this.player.stats[def.stat] = current + def.value;
+    this.player.appliedUpgrades.push(def.id); // xem PauseScene — hiện icon loadout đã chọn trong ván
     // TODO: nếu def.appliesTo tồn tại (ví dụ fireball_size chỉ áp cho fireball) -> lưu riêng thay vì ghi đè stats chung
   }
 

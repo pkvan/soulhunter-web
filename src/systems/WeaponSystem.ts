@@ -8,8 +8,11 @@ import { BossSystem } from "@systems/BossSystem";
 import { showDamageNumber } from "@ui/DamageNumber";
 import weaponsData from "@data/weapons.json";
 import fusionWeaponsData from "@data/fusionWeapons.json";
-import { WeaponDef } from "@types/index";
+import soulCorruptionData from "@data/soulCorruption.json";
+import { WeaponDef, SoulCorruptionConfig } from "@types/index";
 import { GAMEPLAY } from "@config/GameConfig";
+
+const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
 
 const weapons = weaponsData as WeaponDef[];
 // Vũ khí fusion không nằm trong weapons.json gốc (được tạo ra từ 2 vũ khí bị "nuốt" khi fusion,
@@ -33,7 +36,7 @@ export class WeaponSystem {
     private poolManager: PoolManager,
     private soulSystem: SoulSystem,
     private bossSystem: BossSystem,
-    private onEnemyKilled: () => void
+    private onEnemyKilled: (isElite: boolean) => void
   ) {}
 
   update(time: number, _delta: number): void {
@@ -238,15 +241,21 @@ export class WeaponSystem {
     }
   }
 
-  /** Gây damage, hiện damage number, và xử lý chết (soul + despawn + kill count) — dùng chung cho mọi loại vũ khí. */
+  /** Gây damage, hiện damage number, và xử lý chết (soul/Dark Soul + despawn + kill count) — dùng chung cho mọi loại vũ khí. */
   private applyDamage(enemy: Enemy, damage: number): void {
     const isDead = enemy.takeDamage(damage);
     showDamageNumber(this.scene, enemy.sprite.x, enemy.sprite.y, damage);
 
     if (isDead) {
-      this.soulSystem.spawnSoul(enemy.sprite.x, enemy.sprite.y, enemy.def.soulValue);
+      const isElite = enemy.isElite;
+      // Elite Enemy (GDD mục 18): % rơi Dark Soul thay vì Soul thường, luôn thưởng thêm Coin (bonusCoinFromElites, xem GameScene.registerKill).
+      if (isElite && Phaser.Math.FloatBetween(0, 1) < soulCorruption.darkSoulDropChance) {
+        this.soulSystem.spawnDarkSoul(enemy.sprite.x, enemy.sprite.y, enemy.def.soulValue * soulCorruption.darkSoulValueMultiplier);
+      } else {
+        this.soulSystem.spawnSoul(enemy.sprite.x, enemy.sprite.y, enemy.def.soulValue);
+      }
       enemy.despawn();
-      this.onEnemyKilled();
+      this.onEnemyKilled(isElite);
     }
   }
 

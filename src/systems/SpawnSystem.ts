@@ -2,10 +2,14 @@ import Phaser from "phaser";
 import { PoolManager } from "@systems/PoolManager";
 import { Player } from "@entities/Player";
 import enemiesData from "@data/enemies.json";
-import { EnemyDef } from "@types/index";
+import eliteData from "@data/elite.json";
+import soulCorruptionData from "@data/soulCorruption.json";
+import { EnemyDef, EliteConfig, SoulCorruptionConfig } from "@types/index";
 import { GAMEPLAY } from "@config/GameConfig";
 
 const enemies = enemiesData as EnemyDef[];
+const elite = eliteData as EliteConfig;
+const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
 
 /**
  * Spawn quái quanh player (ngoài tầm nhìn camera), tăng độ khó theo thời gian sống (GDD mục 1: "càng sống lâu càng mạnh").
@@ -19,6 +23,7 @@ export class SpawnSystem {
   private lastSpawnAt = 0;
   private difficultyMultiplier = 1;
   private lastDifficultyRampAt = 0;
+  private corruptionUntilTime = -Infinity; // "time" clock của Phaser (giống lastSpawnAt), xem activateCorruption()
   // Bước tăng ở giai đoạn "late" (sau DIFFICULTY_RAMP_ACCELERATION_AT_MS) — tự nhân dần theo
   // DIFFICULTY_RAMP_LATE_GROWTH_RATE mỗi nấc, tạo cảm giác khó tăng nhanh dần trước khi Boss xuất hiện
   // thay vì tuyến tính đều suốt game như trước.
@@ -42,14 +47,22 @@ export class SpawnSystem {
       this.lastDifficultyRampAt = time;
     }
 
+    // Soul Corruption (Dark Soul pickup, xem GameScene.activateCorruption): trong lúc active, spawn dồn
+    // dập hơn — nhân spawnIntervalMs xuống theo corruptionSpawnRateMultiplier (< 1 = nhanh hơn).
+    const corruptionActive = time < this.corruptionUntilTime;
     const spawnIntervalMs = Math.max(
       this.SPAWN_INTERVAL_MIN_MS,
-      this.SPAWN_INTERVAL_BASE_MS / this.difficultyMultiplier
+      (this.SPAWN_INTERVAL_BASE_MS / this.difficultyMultiplier) * (corruptionActive ? soulCorruption.corruptionSpawnRateMultiplier : 1)
     );
     if (time - this.lastSpawnAt > spawnIntervalMs) {
       this.spawnOne();
       this.lastSpawnAt = time;
     }
+  }
+
+  /** Bật cửa sổ "corruption" — dùng cùng clock (time) với lastSpawnAt nên không lệch khi tab bị throttle giữa 2 lần update(). */
+  public activateCorruption(time: number, durationMs: number): void {
+    this.corruptionUntilTime = time + durationMs;
   }
 
   private spawnOne(): void {
@@ -58,7 +71,12 @@ export class SpawnSystem {
 
     const def = this.pickEnemyDef();
     const { x, y } = this.getSpawnPositionOutsideCamera();
-    enemy.spawn(x, y, def, this.difficultyMultiplier * this.enemyHpMultiplier);
+    const eliteChance = Math.min(
+      elite.eliteChanceMax,
+      elite.eliteChanceBase + Math.max(0, this.difficultyMultiplier - 1) * elite.eliteChancePerDifficulty
+    );
+    const isElite = Math.random() < eliteChance;
+    enemy.spawn(x, y, def, this.difficultyMultiplier * this.enemyHpMultiplier, isElite);
   }
 
   private pickEnemyDef(): EnemyDef {

@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 import { Player } from "@entities/Player";
 import { GAMEPLAY } from "@config/GameConfig";
+import soulCorruptionData from "@data/soulCorruption.json";
+import { SoulCorruptionConfig } from "@types/index";
+
+const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
 
 interface SoulOrb {
   sprite: Phaser.GameObjects.Arc; // TODO: thay bằng sprite thật khi có asset
@@ -8,6 +12,7 @@ interface SoulOrb {
   active: boolean;
   magnetized: boolean; // true sau khi nhặt Magnet Orb pickup — xem collectAllWithMagnet()
   magnetSpeed: number; // world units/s hiện tại, tăng dần theo thời gian (acceleration) khi magnetized
+  isDark: boolean; // true = Dark Soul (Soul Corruption, GDD mục 18), chỉ rơi từ Elite Enemy
 }
 
 const MAGNET_ORB_BASE_SPEED = 150; // tốc độ khởi điểm khi vừa bị hút, mô phỏng lực hấp dẫn tăng dần chứ không phải velocity cố định
@@ -16,17 +21,34 @@ const MAGNET_ORB_COLLECT_RADIUS = 14;
 
 /**
  * Quản lý Soul rơi từ quái chết, hút về player khi trong tầm Magnet (bán kính nhỏ, luôn bật) hoặc
- * khi nhặt Magnet Orb pickup (hút TOÀN BỘ Soul đang active trên map, kể cả ngoài camera).
+ * khi nhặt Magnet Orb pickup (hút TOÀN BỘ Soul đang active trên map, kể cả ngoài camera). Dark Soul
+ * (Soul Corruption) là 1 biến thể riêng — chỉ khác màu/kích thước/hiệu ứng nhặt, dùng chung toàn bộ
+ * logic bay/magnet ở trên.
  */
 export class SoulSystem {
   private orbs: SoulOrb[] = [];
+  private darkSoulPickedUpThisFrame = false; // GameScene đọc + reset qua consumeDarkSoulPickup() mỗi update()
 
   constructor(private scene: Phaser.Scene, private player: Player) {}
 
   spawnSoul(x: number, y: number, value: number): void {
     // TODO: dùng object pool tương tự Enemy/Projectile nếu số lượng Soul lớn gây lag
     const sprite = this.scene.add.circle(x, y, 4, 0x8be9fd);
-    this.orbs.push({ sprite, value, active: true, magnetized: false, magnetSpeed: 0 });
+    this.orbs.push({ sprite, value, active: true, magnetized: false, magnetSpeed: 0, isDark: false });
+  }
+
+  /** Dark Soul (Soul Corruption) — chỉ rơi từ Elite Enemy chết, xem WeaponSystem.applyDamage(). To hơn Soul thường, có pulse glow để dễ nhận biết. */
+  spawnDarkSoul(x: number, y: number, value: number): void {
+    const sprite = this.scene.add.circle(x, y, 6, Number(soulCorruption.darkSoulColor));
+    this.scene.tweens.add({
+      targets: sprite,
+      scale: 1.3,
+      duration: 400,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut"
+    });
+    this.orbs.push({ sprite, value, active: true, magnetized: false, magnetSpeed: 0, isDark: true });
   }
 
   update(delta: number): void {
@@ -48,9 +70,7 @@ export class SoulSystem {
 
         const dist = Phaser.Math.Distance.Between(orb.sprite.x, orb.sprite.y, this.player.sprite.x, this.player.sprite.y);
         if (dist < MAGNET_ORB_COLLECT_RADIUS) {
-          this.player.gainSoul(orb.value);
-          orb.sprite.destroy();
-          orb.active = false;
+          this.collectOrb(orb);
         }
         continue;
       }
@@ -60,13 +80,26 @@ export class SoulSystem {
         this.player.sprite.x, this.player.sprite.y
       );
       if (dist < pickupRadius) {
-        this.player.gainSoul(orb.value);
-        orb.sprite.destroy();
-        orb.active = false;
+        this.collectOrb(orb);
       }
     }
 
     this.orbs = this.orbs.filter((o) => o.active);
+  }
+
+  private collectOrb(orb: SoulOrb): void {
+    this.player.gainSoul(orb.value);
+    if (orb.isDark) this.darkSoulPickedUpThisFrame = true;
+    this.scene.tweens.killTweensOf(orb.sprite); // Dark Soul có pulse tween riêng, cần dọn trước khi destroy
+    orb.sprite.destroy();
+    orb.active = false;
+  }
+
+  /** GameScene gọi mỗi update() để biết có vừa nhặt Dark Soul hay không (và tự reset cờ) — kích hoạt Soul Corruption buff. */
+  public consumeDarkSoulPickup(): boolean {
+    const picked = this.darkSoulPickedUpThisFrame;
+    this.darkSoulPickedUpThisFrame = false;
+    return picked;
   }
 
   /**

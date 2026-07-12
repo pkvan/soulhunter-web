@@ -4,14 +4,30 @@ import weaponsData from "@data/weapons.json";
 
 const weapons = weaponsData as WeaponDef[];
 
-type CardData = UpgradeChoice | { fusion: true; fusionId: string; def: FusionDef };
+export type CardData = UpgradeChoice | { fusion: true; fusionId: string; def: FusionDef };
 
-interface CardStyle {
+export interface CardStyle {
   bg: number;
   border: number;
   borderWidth: number;
   label?: string;
   labelColor?: string;
+}
+
+/**
+ * Style phân loại theo CardData — dùng chung cho LevelUpCard (màn Level Up) và tray loadout thu nhỏ
+ * trong PauseScene, để 2 nơi LUÔN đồng bộ 1 bảng màu, không tách bảng màu riêng dễ lệch nhau khi sửa sau này.
+ */
+export function getCardStyle(data: CardData): CardStyle {
+  if ("fusion" in data && data.fusion) {
+    return { bg: 0x4a1b0c, border: 0xd85a30, borderWidth: 2, label: "FUSION KHẢ DỤNG", labelColor: "#d85a30" };
+  }
+  if ("weapon" in data && data.weapon) {
+    return data.isNew
+      ? { bg: 0x0c2a4a, border: 0x4aa3ff, borderWidth: 2, label: "VŨ KHÍ MỚI", labelColor: "#4aa3ff" }
+      : { bg: 0x123317, border: 0x4ade80, borderWidth: 2, label: "NÂNG CẤP", labelColor: "#4ade80" };
+  }
+  return { bg: 0x2c2c2a, border: 0x5f5e5a, borderWidth: 1 };
 }
 
 /**
@@ -28,7 +44,7 @@ export class LevelUpCard {
     data: CardData,
     onSelect: () => void
   ) {
-    const style = this.getStyle(data);
+    const style = getCardStyle(data);
     const elements: Phaser.GameObjects.GameObject[] = [];
 
     const bg = scene.add.rectangle(0, 0, 180, 220, style.bg).setStrokeStyle(style.borderWidth, style.border);
@@ -55,18 +71,6 @@ export class LevelUpCard {
     // (khai báo tâm sẽ khiến vùng click ăn thực tế bị lệch hẳn ra góc trên-trái của card).
     this.container.setInteractive(new Phaser.Geom.Rectangle(0, 0, 180, 220), Phaser.Geom.Rectangle.Contains);
     this.container.on("pointerdown", onSelect);
-  }
-
-  private getStyle(data: CardData): CardStyle {
-    if ("fusion" in data && data.fusion) {
-      return { bg: 0x4a1b0c, border: 0xd85a30, borderWidth: 2, label: "FUSION KHẢ DỤNG", labelColor: "#d85a30" };
-    }
-    if ("weapon" in data && data.weapon) {
-      return data.isNew
-        ? { bg: 0x0c2a4a, border: 0x4aa3ff, borderWidth: 2, label: "VŨ KHÍ MỚI", labelColor: "#4aa3ff" }
-        : { bg: 0x123317, border: 0x4ade80, borderWidth: 2, label: "NÂNG CẤP", labelColor: "#4ade80" };
-    }
-    return { bg: 0x2c2c2a, border: 0x5f5e5a, borderWidth: 1 };
   }
 
   private getTitle(data: CardData): string {
