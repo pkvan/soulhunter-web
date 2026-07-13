@@ -1,7 +1,9 @@
 import Phaser from "phaser";
 import { GameScene } from "@scenes/GameScene";
 import { UpgradeSystem } from "@systems/UpgradeSystem";
-import { LevelUpCard, CardData } from "@ui/LevelUpCard";
+import { CollectionCard } from "@ui/CollectionCard";
+import { CardData } from "@ui/CardStyle";
+import { buildGameplayCardContent } from "@ui/CardContentBuilders";
 import { EventBus, GameEvents } from "@utils/EventBus";
 import { Player } from "@entities/Player";
 import fusionsData from "@data/fusions.json";
@@ -16,7 +18,7 @@ const fusions = fusionsData as FusionDef[];
  * scene này chỉ chịu trách nhiệm hiển thị và nhận input người chơi.
  */
 export class LevelUpScene extends Phaser.Scene {
-  private cards: LevelUpCard[] = [];
+  private cards: CollectionCard[] = [];
   private overlay?: Phaser.GameObjects.Rectangle;
   private isShowingChoices = false;
 
@@ -65,7 +67,7 @@ export class LevelUpScene extends Phaser.Scene {
     choices.forEach((choice, index) => {
       const cardData = this.buildCardData(choice, player);
 
-      const card = new LevelUpCard(this, startX + index * spacing, centerY, cardData, () => {
+      const card = new CollectionCard(this, startX + index * spacing, centerY, buildGameplayCardContent(cardData), () => {
         this.selectChoice(choice, gameScene, upgradeSystem);
       });
       card.container.setDepth(1);

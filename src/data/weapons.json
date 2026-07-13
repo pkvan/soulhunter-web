@@ -8,6 +8,7 @@
     "baseRange": 60,
     "maxLevel": 8,
     "color": "0xd1d5db",
+    "rarity": "common",
     "description": "Đánh cận chiến hình quạt trước mặt player, đổi lại +30 Max HP khi trang bị"
   },
   {
@@ -22,6 +23,7 @@
     "dotDurationMs": 3000,
     "dotTickIntervalMs": 1000,
     "color": "0xf97316",
+    "rarity": "rare",
     "description": "Bay thẳng theo hướng gần nhất, nổ khi trúng kèm đốt DOT"
   },
   {
@@ -36,6 +38,7 @@
     "slowFactor": 0.3,
     "slowDurationMs": 2000,
     "color": "0x67e8f9",
+    "rarity": "common",
     "description": "Xuyên qua nhiều quái trên đường bay, làm chậm quái trúng đòn"
   },
   {
@@ -46,6 +49,7 @@
     "baseCooldownMs": 1500,
     "maxLevel": 8,
     "color": "0xfde047",
+    "rarity": "epic",
     "description": "Đánh trúng 1 quái ngẫu nhiên trong tầm"
   },
   {
@@ -58,6 +62,7 @@
     "maxDistance": 480,
     "maxLevel": 8,
     "color": "0xc98a3b",
+    "rarity": "rare",
     "description": "Bay ra tối đa X khoảng cách rồi quay lại player"
   },
   {
@@ -71,6 +76,7 @@
     "locked": true,
     "unlockCostCoin": 400,
     "color": "0xfacc15",
+    "rarity": "legendary",
     "description": "Vũ khí đặc biệt — phóng lao thánh bay thẳng, sát thương cao. Chỉ mở khóa qua Daily Login Day 7 hoặc Boss Loot Wheel"
   },
   {
@@ -84,6 +90,7 @@
     "locked": true,
     "unlockCostCoin": 600,
     "color": "0x60a5fa",
+    "rarity": "legendary",
     "description": "Vũ khí đặc biệt — búa sấm sét cận chiến, sát thương mạnh. Chỉ mở khóa qua Daily Login Day 7 hoặc Boss Loot Wheel"
   }
 ]

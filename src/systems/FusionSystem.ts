@@ -4,6 +4,7 @@ import fusionsData from "@data/fusions.json";
 import weaponsData from "@data/weapons.json";
 import upgradesData from "@data/upgrades.json";
 import { FusionDef, WeaponDef, UpgradeDef } from "@types/index";
+import { CollectionManager } from "@systems/CollectionManager";
 
 const fusions = fusionsData as FusionDef[];
 const weapons = weaponsData as WeaponDef[];
@@ -58,5 +59,6 @@ export class FusionSystem {
     );
     player.equippedWeapons.push({ weaponId: fusion.id, level: 1, fusedInto: fusion.id });
     player.syncSwordHpBonus(); // Sword có thể vừa bị "nuốt" làm nguyên liệu fusion -> trừ lại đúng bonus HP
+    CollectionManager.unlockWeapon(fusion.id); // Collection: vũ khí Fusion cũng tính là "vũ khí" đã sở hữu
   }
 }

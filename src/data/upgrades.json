@@ -1,23 +1,197 @@
 [
-  { "id": "damage_up", "name": "Damage", "description": "Tăng sát thương gây ra thêm 15%", "stat": "damageMultiplier", "value": 0.15, "stackable": true },
-  { "id": "attack_speed_up", "name": "Attack Speed", "description": "Tăng tốc đánh thêm 20%", "stat": "cooldownMultiplier", "value": -0.20, "stackable": true },
-  { "id": "move_speed_up", "name": "Move Speed", "description": "Tăng tốc độ di chuyển thêm 10%", "stat": "moveSpeedMultiplier", "value": 0.10, "stackable": true },
-  { "id": "crit_chance", "name": "Critical Chance", "description": "Tăng tỉ lệ chí mạng thêm 8%", "stat": "critChance", "value": 0.08, "stackable": true },
-  { "id": "crit_damage", "name": "Critical Damage", "description": "Tăng sát thương chí mạng thêm 25%", "stat": "critDamageMultiplier", "value": 0.25, "stackable": true },
-  { "id": "projectile_plus", "name": "Projectile +1", "description": "Bắn thêm 1 viên đạn mỗi lượt tấn công", "stat": "projectileCount", "value": 1, "stackable": true },
-  { "id": "fireball_size", "name": "Fireball Size", "description": "Tăng kích thước cầu lửa thêm 20%", "stat": "fireballSizeMultiplier", "value": 0.20, "stackable": true, "appliesTo": "fireball" },
-  { "id": "sword_range", "name": "Sword Range", "description": "Tăng tầm đánh của Sword thêm 15%", "stat": "swordRangeMultiplier", "value": 0.15, "stackable": true, "appliesTo": "sword" },
-  { "id": "freeze_chance", "name": "Freeze Chance", "description": "Thêm 10% tỉ lệ đóng băng kẻ địch khi trúng đòn", "stat": "freezeChance", "value": 0.10, "stackable": true },
-  { "id": "burn", "name": "Burn Damage", "description": "Tăng thêm 15% sát thương cháy mỗi giây (Fireball)", "stat": "burnChance", "value": 0.15, "stackable": true },
-  { "id": "shrapnel", "name": "Shrapnel", "description": "Bắn thêm 1 tia phụ khi trúng đòn (Fireball/Ice Shard)", "stat": "shrapnelCount", "value": 1, "stackable": true, "appliesTo": ["fireball", "ice_shard"] },
-  { "id": "poison", "name": "Poison", "description": "Có cơ hội gây độc theo thời gian khi trúng đòn", "stat": "poisonChance", "value": 0.15, "stackable": true },
-  { "id": "life_steal", "name": "Life Steal", "description": "Hồi máu bằng 3% sát thương gây ra", "stat": "lifeStealPercent", "value": 0.03, "stackable": true },
-  { "id": "max_hp", "name": "Max HP", "description": "Tăng thêm 20 máu tối đa", "stat": "maxHp", "value": 20, "stackable": true },
-  { "id": "shield", "name": "Shield", "description": "Nhận thêm 1 lượt chắn miễn sát thương", "stat": "shieldCharges", "value": 1, "stackable": true },
-  { "id": "magnet", "name": "Magnet Range", "description": "Tăng phạm vi hút Soul thêm 25%", "stat": "pickupRadiusMultiplier", "value": 0.25, "stackable": true },
-  { "id": "hp_regen", "name": "HP Regen", "description": "Hồi thêm 1 máu mỗi giây", "stat": "hpRegenPerSecond", "value": 1, "stackable": true },
-  { "id": "cooldown_reduction", "name": "Cooldown Reduction", "description": "Giảm thêm 5% thời gian hồi chiêu vũ khí", "stat": "globalCooldownReduction", "value": 0.05, "stackable": true },
-  { "id": "dodge_chance", "name": "Dodge Chance", "description": "Tăng tỉ lệ né đòn thêm 5%", "stat": "dodgeChance", "value": 0.05, "stackable": true },
-  { "id": "armor", "name": "Armor", "description": "Giảm thêm 2 sát thương phải nhận mỗi đòn", "stat": "flatDamageReduction", "value": 2, "stackable": true },
-  { "id": "exp_gain", "name": "Soul Value", "description": "Tăng lượng Soul nhận được thêm 10%", "stat": "soulValueMultiplier", "value": 0.10, "stackable": true }
+  {
+    "id": "damage_up",
+    "name": "Damage",
+    "description": "Tăng sát thương gây ra thêm 15%",
+    "stat": "damageMultiplier",
+    "value": 0.15,
+    "stackable": true,
+    "rarity": "common"
+  },
+  {
+    "id": "attack_speed_up",
+    "name": "Attack Speed",
+    "description": "Tăng tốc đánh thêm 20%",
+    "stat": "cooldownMultiplier",
+    "value": -0.2,
+    "stackable": true,
+    "rarity": "common"
+  },
+  {
+    "id": "move_speed_up",
+    "name": "Move Speed",
+    "description": "Tăng tốc độ di chuyển thêm 10%",
+    "stat": "moveSpeedMultiplier",
+    "value": 0.1,
+    "stackable": true,
+    "rarity": "common"
+  },
+  {
+    "id": "crit_chance",
+    "name": "Critical Chance",
+    "description": "Tăng tỉ lệ chí mạng thêm 8%",
+    "stat": "critChance",
+    "value": 0.08,
+    "stackable": true,
+    "rarity": "rare"
+  },
+  {
+    "id": "crit_damage",
+    "name": "Critical Damage",
+    "description": "Tăng sát thương chí mạng thêm 25%",
+    "stat": "critDamageMultiplier",
+    "value": 0.25,
+    "stackable": true,
+    "rarity": "rare"
+  },
+  {
+    "id": "projectile_plus",
+    "name": "Projectile +1",
+    "description": "Bắn thêm 1 viên đạn mỗi lượt tấn công",
+    "stat": "projectileCount",
+    "value": 1,
+    "stackable": true,
+    "rarity": "epic"
+  },
+  {
+    "id": "fireball_size",
+    "name": "Fireball Size",
+    "description": "Tăng kích thước cầu lửa thêm 20%",
+    "stat": "fireballSizeMultiplier",
+    "value": 0.2,
+    "stackable": true,
+    "appliesTo": "fireball",
+    "rarity": "common"
+  },
+  {
+    "id": "sword_range",
+    "name": "Sword Range",
+    "description": "Tăng tầm đánh của Sword thêm 15%",
+    "stat": "swordRangeMultiplier",
+    "value": 0.15,
+    "stackable": true,
+    "appliesTo": "sword",
+    "rarity": "common"
+  },
+  {
+    "id": "freeze_chance",
+    "name": "Freeze Chance",
+    "description": "Thêm 10% tỉ lệ đóng băng kẻ địch khi trúng đòn",
+    "stat": "freezeChance",
+    "value": 0.1,
+    "stackable": true,
+    "rarity": "rare"
+  },
+  {
+    "id": "burn",
+    "name": "Burn Damage",
+    "description": "Tăng thêm 15% sát thương cháy mỗi giây (Fireball)",
+    "stat": "burnChance",
+    "value": 0.15,
+    "stackable": true,
+    "rarity": "rare"
+  },
+  {
+    "id": "shrapnel",
+    "name": "Shrapnel",
+    "description": "Bắn thêm 1 tia phụ khi trúng đòn (Fireball/Ice Shard)",
+    "stat": "shrapnelCount",
+    "value": 1,
+    "stackable": true,
+    "appliesTo": [
+      "fireball",
+      "ice_shard"
+    ],
+    "rarity": "epic"
+  },
+  {
+    "id": "poison",
+    "name": "Poison",
+    "description": "Có cơ hội gây độc theo thời gian khi trúng đòn",
+    "stat": "poisonChance",
+    "value": 0.15,
+    "stackable": true,
+    "rarity": "rare"
+  },
+  {
+    "id": "life_steal",
+    "name": "Life Steal",
+    "description": "Hồi máu bằng 3% sát thương gây ra",
+    "stat": "lifeStealPercent",
+    "value": 0.03,
+    "stackable": true,
+    "rarity": "epic"
+  },
+  {
+    "id": "max_hp",
+    "name": "Max HP",
+    "description": "Tăng thêm 20 máu tối đa",
+    "stat": "maxHp",
+    "value": 20,
+    "stackable": true,
+    "rarity": "common"
+  },
+  {
+    "id": "shield",
+    "name": "Shield",
+    "description": "Nhận thêm 1 lượt chắn miễn sát thương",
+    "stat": "shieldCharges",
+    "value": 1,
+    "stackable": true,
+    "rarity": "epic"
+  },
+  {
+    "id": "magnet",
+    "name": "Magnet Range",
+    "description": "Tăng phạm vi hút Soul thêm 25%",
+    "stat": "pickupRadiusMultiplier",
+    "value": 0.25,
+    "stackable": true,
+    "rarity": "common"
+  },
+  {
+    "id": "hp_regen",
+    "name": "HP Regen",
+    "description": "Hồi thêm 1 máu mỗi giây",
+    "stat": "hpRegenPerSecond",
+    "value": 1,
+    "stackable": true,
+    "rarity": "rare"
+  },
+  {
+    "id": "cooldown_reduction",
+    "name": "Cooldown Reduction",
+    "description": "Giảm thêm 5% thời gian hồi chiêu vũ khí",
+    "stat": "globalCooldownReduction",
+    "value": 0.05,
+    "stackable": true,
+    "rarity": "rare"
+  },
+  {
+    "id": "dodge_chance",
+    "name": "Dodge Chance",
+    "description": "Tăng tỉ lệ né đòn thêm 5%",
+    "stat": "dodgeChance",
+    "value": 0.05,
+    "stackable": true,
+    "rarity": "rare"
+  },
+  {
+    "id": "armor",
+    "name": "Armor",
+    "description": "Giảm thêm 2 sát thương phải nhận mỗi đòn",
+    "stat": "flatDamageReduction",
+    "value": 2,
+    "stackable": true,
+    "rarity": "common"
+  },
+  {
+    "id": "exp_gain",
+    "name": "Soul Value",
+    "description": "Tăng lượng Soul nhận được thêm 10%",
+    "stat": "soulValueMultiplier",
+    "value": 0.1,
+    "stackable": true,
+    "rarity": "common"
+  }
 ]

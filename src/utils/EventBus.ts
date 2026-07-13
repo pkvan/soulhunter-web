@@ -16,5 +16,9 @@ export const GameEvents = {
   FINAL_BOSS_DEFEATED: "final_boss_defeated",
   BOSS_LOOT_RESOLVED: "boss_loot_resolved",
   FUSION_TRIGGERED: "fusion_triggered",
-  SOUL_COLLECTED: "soul_collected"
+  SOUL_COLLECTED: "soul_collected",
+  CHALLENGE_PROGRESS_UPDATED: "challenge_progress_updated",
+  CHALLENGE_DAY_UNLOCKED: "challenge_day_unlocked",
+  CHALLENGE_REWARD_CLAIMED: "challenge_reward_claimed",
+  COLLECTION_UNLOCKED: "collection_unlocked"
 } as const;

@@ -9,7 +9,8 @@
     "maxLevel": 1,
     "color": "0xff6a1a",
     "slashColor": "0xff6a1a",
-    "description": "Sword + Fireball: chém tạo sóng lửa tầm ngắn, sát thương và tầm đánh cao hơn Sword gốc"
+    "description": "Sword + Fireball: chém tạo sóng lửa tầm ngắn, sát thương và tầm đánh cao hơn Sword gốc",
+    "rarity": "epic"
   },
   {
     "id": "thunder_flame",
@@ -22,7 +23,8 @@
     "color": "0xfacc15",
     "chainRadius": 100,
     "chainDamageRatio": 0.6,
-    "description": "Fireball + Lightning: nổ khi trúng, sét lan sang 1 quái gần nhất trong bán kính"
+    "description": "Fireball + Lightning: nổ khi trúng, sét lan sang 1 quái gần nhất trong bán kính",
+    "rarity": "epic"
   },
   {
     "id": "frozen_boomerang",
@@ -35,7 +37,8 @@
     "color": "0x93c5fd",
     "slowFactor": 0.5,
     "slowDurationMs": 2000,
-    "description": "Ice Shard + Boomerang: bay ra rồi quay lại, mỗi lần trúng làm chậm quái"
+    "description": "Ice Shard + Boomerang: bay ra rồi quay lại, mỗi lần trúng làm chậm quái",
+    "rarity": "epic"
   },
   {
     "id": "venom_blade",
@@ -50,7 +53,8 @@
     "dotDamage": 4,
     "dotDurationMs": 3000,
     "dotTickIntervalMs": 500,
-    "description": "Sword + Poison: chém gây độc theo thời gian"
+    "description": "Sword + Poison: chém gây độc theo thời gian",
+    "rarity": "epic"
   },
   {
     "id": "chain_return",
@@ -63,7 +67,8 @@
     "color": "0xfde68a",
     "chainRadius": 90,
     "chainDamageRatio": 0.5,
-    "description": "Lightning + Boomerang: mỗi lần trúng giật điện lan sang 1 quái gần"
+    "description": "Lightning + Boomerang: mỗi lần trúng giật điện lan sang 1 quái gần",
+    "rarity": "epic"
   },
   {
     "id": "steam_burst",
@@ -77,7 +82,8 @@
     "color": "0xfca5a5",
     "slowFactor": 1,
     "slowDurationMs": 1000,
-    "description": "Ice Shard + Fireball: xuyên nhiều quái, mỗi lần trúng gây choáng ngắn"
+    "description": "Ice Shard + Fireball: xuyên nhiều quái, mỗi lần trúng gây choáng ngắn",
+    "rarity": "epic"
   },
   {
     "id": "frost_blade",
@@ -92,7 +98,8 @@
     "slowFactor": 0.4,
     "slowDurationMs": 1500,
     "slowChance": 0.5,
-    "description": "Sword + Ice Shard: chém có % làm chậm quái trúng đòn"
+    "description": "Sword + Ice Shard: chém có % làm chậm quái trúng đòn",
+    "rarity": "epic"
   },
   {
     "id": "homing_fireball",
@@ -103,7 +110,8 @@
     "baseSpeed": 230,
     "maxLevel": 1,
     "color": "0xfb923c",
-    "description": "Fireball + Boomerang: cầu lửa bay ra rồi vòng lại player"
+    "description": "Fireball + Boomerang: cầu lửa bay ra rồi vòng lại player",
+    "rarity": "epic"
   },
   {
     "id": "static_freeze",
@@ -116,7 +124,8 @@
     "slowFactor": 1,
     "slowDurationMs": 800,
     "slowChance": 0.35,
-    "description": "Lightning + Ice Shard: đánh 1 quái ngẫu nhiên, có % đóng băng"
+    "description": "Lightning + Ice Shard: đánh 1 quái ngẫu nhiên, có % đóng băng",
+    "rarity": "epic"
   },
   {
     "id": "storm_slash",
@@ -130,7 +139,8 @@
     "slashColor": "0xd6e6ff",
     "randomChainCount": 1,
     "randomChainDamageRatio": 0.7,
-    "description": "Sword + Lightning: chém xong phóng tia sét sang 1 quái ngẫu nhiên khác"
+    "description": "Sword + Lightning: chém xong phóng tia sét sang 1 quái ngẫu nhiên khác",
+    "rarity": "epic"
   },
   {
     "id": "ember_blade",
@@ -145,7 +155,8 @@
     "dotDamage": 5,
     "dotDurationMs": 2500,
     "dotTickIntervalMs": 500,
-    "description": "Sword + Burn: đòn chém để lại lửa cháy theo thời gian"
+    "description": "Sword + Burn: đòn chém để lại lửa cháy theo thời gian",
+    "rarity": "epic"
   },
   {
     "id": "ice_bomb",
@@ -159,7 +170,8 @@
     "aoeRadius": 80,
     "aoeSlowFactor": 0.6,
     "aoeSlowDurationMs": 1500,
-    "description": "Fireball + Freeze Chance: nổ khi trúng, làm chậm diện rộng quanh điểm nổ"
+    "description": "Fireball + Freeze Chance: nổ khi trúng, làm chậm diện rộng quanh điểm nổ",
+    "rarity": "epic"
   },
   {
     "id": "vampiric_boomerang",
@@ -171,7 +183,8 @@
     "maxLevel": 1,
     "color": "0xef4444",
     "lifeStealPercent": 0.2,
-    "description": "Boomerang + Life Steal: hút máu cho player mỗi lần trúng đòn"
+    "description": "Boomerang + Life Steal: hút máu cho player mỗi lần trúng đòn",
+    "rarity": "epic"
   },
   {
     "id": "toxic_frost",
@@ -188,7 +201,8 @@
     "dotDamage": 3,
     "dotDurationMs": 2500,
     "dotTickIntervalMs": 500,
-    "description": "Ice Shard + Poison: xuyên quái, làm chậm và gây độc theo thời gian"
+    "description": "Ice Shard + Poison: xuyên quái, làm chậm và gây độc theo thời gian",
+    "rarity": "epic"
   },
   {
     "id": "plasma_bolt",
@@ -201,6 +215,7 @@
     "dotDamage": 5,
     "dotDurationMs": 2500,
     "dotTickIntervalMs": 500,
-    "description": "Lightning + Burn: đánh 1 quái ngẫu nhiên, gây thêm cháy lan theo thời gian"
+    "description": "Lightning + Burn: đánh 1 quái ngẫu nhiên, gây thêm cháy lan theo thời gian",
+    "rarity": "epic"
   }
 ]

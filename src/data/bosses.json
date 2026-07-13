@@ -6,7 +6,10 @@
     "hp": 1400,
     "moveSpeed": 40,
     "skillIds": ["dash", "summon", "ground_slam"],
-    "isFinalBoss": true
+    "isFinalBoss": true,
+    "description": "Boss cuối của Forest — lao tới, triệu hồi quái tay sai và đập đất gây sát thương diện rộng.",
+    "introText": "The ancient guardian awakens...",
+    "introCameraZoom": 1.15
   },
   {
     "id": "orc_warlord",
@@ -15,7 +18,10 @@
     "hp": 2100,
     "moveSpeed": 40,
     "skillIds": ["charge", "roar", "ground_slam"],
-    "isFinalBoss": true
+    "isFinalBoss": true,
+    "description": "Chỉ huy Orc máu trâu nhất, gầm thét buff tốc độ/sát thương trước khi xung phong.",
+    "introText": "No one has escaped his charge.",
+    "introCameraZoom": 1.2
   },
   {
     "id": "grave_keeper",
@@ -24,6 +30,9 @@
     "hp": 1900,
     "moveSpeed": 40,
     "skillIds": ["charge", "summon", "ground_slam"],
-    "isFinalBoss": true
+    "isFinalBoss": true,
+    "description": "Người canh giữ nghĩa địa — vừa xung phong vừa triệu hồi quái từ lòng đất.",
+    "introText": "The keeper of the dead has risen.",
+    "introCameraZoom": 1.15
   }
 ]

@@ -13,6 +13,7 @@ import { UpgradeSystem } from "@systems/UpgradeSystem";
 import { FusionSystem } from "@systems/FusionSystem";
 import { BossSystem } from "@systems/BossSystem";
 import { VictoryController } from "@systems/VictoryController";
+import { Challenge7DaysManager } from "@systems/Challenge7DaysManager";
 import { HUD } from "@ui/HUD";
 import { EventBus, GameEvents } from "@utils/EventBus";
 import dailyChallengesData from "@data/dailyChallenges.json";
@@ -23,10 +24,13 @@ import { calculateCoinEarned } from "@utils/CoinFormula";
 import { hasClaimedDailyChallengeToday, markDailyChallengeClaimedToday } from "@utils/SaveData";
 import { getMapById, getEnemyDataForMap, markMapCleared, getNextMap } from "@utils/MapData";
 import { GAMEPLAY } from "@config/GameConfig";
+import bossesData from "@data/bosses.json";
+import { BossDef } from "@types/index";
 
 const dailyChallenges = dailyChallengesData as DailyChallengeDef[];
 const elite = eliteData as EliteConfig;
 const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
+const bosses = bossesData as BossDef[];
 
 // DEBUG TẠM THỜI: thay cho GAMEPLAY.BOSS_SPAWN_AT_MS thật (mặc định 5-10 phút) để test nhanh boss cuối
 // map mà không phải đợi lâu. Mỗi map chỉ có 1 boss cuối (mapDef.bossId, luôn isFinalBoss — xem MapData.ts),
@@ -179,10 +183,46 @@ export class GameScene extends Phaser.Scene {
 
     // DEBUG TẠM THỜI — xem comment ở đầu file. Mỗi map chỉ có 1 boss cuối (mapBossId, luôn isFinalBoss).
     if (!this.isVictoryCinematicActive && !this.bossSpawned && this.elapsedPlayMs >= BOSS_SPAWN_DEBUG_MS && !this.bossSystem.getBoss()) {
-      this.bossSystem.spawnBoss(this.mapBossId);
       this.bossSpawned = true;
-      EventBus.emit(GameEvents.BOSS_SPAWNED);
+      this.bossSystem.spawnBoss(this.mapBossId);
+      this.startBossIntro();
     }
+  }
+
+  /**
+   * Boss vừa spawn (còn đứng yên vì BossSystem.update() chưa chạy lần nào) — pause hẳn GameScene rồi giao
+   * toàn bộ cinematic cho BossIntroScene/BossIntroController (camera pan+zoom, overlay, typewriter, Boss
+   * idle animation). BossSystem.update() chỉ được gọi từ update() ở trên nên Boss AI tự động "đứng yên"
+   * suốt cinematic mà không cần thêm cờ nào trên Boss — xem docblock BossIntroController.
+   */
+  private startBossIntro(): void {
+    const boss = this.bossSystem.getBoss();
+    const bossDef = bosses.find((b) => b.id === this.mapBossId);
+    if (!boss || !bossDef) {
+      // Fallback an toàn nếu thiếu data — vẫn cho boss xuất hiện bình thường thay vì kẹt game.
+      EventBus.emit(GameEvents.BOSS_SPAWNED);
+      return;
+    }
+
+    this.scene.pause();
+    this.hud.setPauseButtonEnabled(false);
+    this.scene.launch("BossIntroScene", {
+      boss,
+      bossDef,
+      gameScene: this,
+      onIntroComplete: () => this.onBossIntroComplete()
+    });
+  }
+
+  /** BossIntroController đã resume gameplay xong (xem BossIntroScene) — chỉ còn việc GameScene tự quản lý (HUD + event có sẵn). */
+  private onBossIntroComplete(): void {
+    this.hud.setPauseButtonEnabled(true);
+    EventBus.emit(GameEvents.BOSS_SPAWNED);
+  }
+
+  /** BossIntroController gọi sau khi cinematic kết thúc — khôi phục camera follow Player với đúng tham số lúc create(). */
+  public resumeCameraFollow(): void {
+    this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
   }
 
   private onPlayerDied(): void {
@@ -281,6 +321,7 @@ export class GameScene extends Phaser.Scene {
 
   public registerKill(isElite = false): void {
     this.kills += 1;
+    Challenge7DaysManager.addKillProgress(1);
     if (isElite) this.bonusCoinFromElites += elite.eliteCoinBonus;
 
     // Combo: chuỗi kill liên tiếp trong COMBO_RESET_MS — quá khoảng này thì lần giết tiếp theo bắt đầu lại từ 1.

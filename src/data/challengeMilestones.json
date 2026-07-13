@@ -1,0 +1,6 @@
+[
+  { "requiredStars": 7, "rewardId": "coin_small", "rewardName": "100 Coin", "rewardIcon": "coin", "rewardType": "coin", "rewardCoin": 100 },
+  { "requiredStars": 14, "rewardId": "coin_medium", "rewardName": "250 Coin", "rewardIcon": "coin", "rewardType": "coin", "rewardCoin": 250 },
+  { "requiredStars": 21, "rewardId": "weapon_unlock_21", "rewardName": "Mở Khóa Vũ Khí Đặc Biệt", "rewardIcon": "weapon", "rewardType": "weapon_unlock", "rewardCoin": 150 },
+  { "requiredStars": 28, "rewardId": "permanent_token_28", "rewardName": "+1 Permanent Upgrade Token", "rewardIcon": "token", "rewardType": "permanent_upgrade_token" }
+]

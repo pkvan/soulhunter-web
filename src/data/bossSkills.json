@@ -1,7 +1,7 @@
 [
-  { "id": "dash", "type": "dash", "cooldownMs": 6000, "telegraphMs": 500, "speed": 480, "durationMs": 500, "damage": 30 },
-  { "id": "summon", "type": "summon", "cooldownMs": 12000, "count": 4 },
-  { "id": "ground_slam", "type": "ground_slam", "cooldownMs": 9000, "telegraphMs": 800, "radius": 110, "damage": 35 },
-  { "id": "charge", "type": "charge", "cooldownMs": 7000, "telegraphMs": 600, "speed": 650, "durationMs": 700, "damage": 40 },
-  { "id": "roar", "type": "roar", "cooldownMs": 15000, "radius": 220, "durationMs": 5000, "moveSpeedBuff": 0.3, "damageBuff": 0.2 }
+  { "id": "dash", "name": "Lao Tới", "type": "dash", "cooldownMs": 6000, "telegraphMs": 500, "speed": 480, "durationMs": 500, "damage": 30 },
+  { "id": "summon", "name": "Triệu Hồi Quái", "type": "summon", "cooldownMs": 12000, "count": 4 },
+  { "id": "ground_slam", "name": "Đập Đất", "type": "ground_slam", "cooldownMs": 9000, "telegraphMs": 800, "radius": 110, "damage": 35 },
+  { "id": "charge", "name": "Xung Phong", "type": "charge", "cooldownMs": 7000, "telegraphMs": 600, "speed": 650, "durationMs": 700, "damage": 40 },
+  { "id": "roar", "name": "Gầm Thét", "type": "roar", "cooldownMs": 15000, "radius": 220, "durationMs": 5000, "moveSpeedBuff": 0.3, "damageBuff": 0.2 }
 ]

@@ -1,3 +1,6 @@
+/** 4 bậc độ hiếm dùng chung cho màu viền Card (Collection + LevelUp) — xem ui/CollectionCard.ts RARITY_COLORS. */
+export type Rarity = "common" | "rare" | "epic" | "legendary";
+
 export interface WeaponDef {
   id: string;
   name: string;
@@ -6,8 +9,8 @@ export interface WeaponDef {
   baseCooldownMs: number;
   maxLevel: number;
   description: string;
-  color?: string; // hex string (vd "0xf97316") — màu icon placeholder dùng chung ở LevelUpCard/HUD, xem ui/WeaponIcon.ts
-  rarity?: string; // chưa có data nào gán giá trị — chỉ để kiến trúc Card sẵn sàng hiện Rarity khi có
+  color?: string; // hex string (vd "0xf97316") — màu icon placeholder dùng chung ở CollectionCard/HUD, xem ui/WeaponIcon.ts
+  rarity?: Rarity;
   locked?: boolean; // vũ khí đặc biệt chưa mở khóa từ đầu — chỉ unlock qua Daily Login Day7 hoặc Boss Loot Wheel, xem SaveData.isWeaponUnlocked()
   unlockCostCoin?: number; // chỉ dùng để so sánh "rẻ nhất" khi chọn vũ khí unlock ngẫu nhiên, không có màn mua trực tiếp
   [key: string]: unknown;
@@ -16,8 +19,8 @@ export interface WeaponDef {
 export interface UpgradeDef {
   id: string;
   name: string;
-  description?: string; // mô tả ngắn (tối đa ~2 dòng khi render) giải thích upgrade làm gì — hiện trong LevelUpCard
-  rarity?: string; // chưa có data nào gán giá trị — chỉ để kiến trúc Card sẵn sàng hiện Rarity khi có
+  description?: string; // mô tả ngắn (tối đa ~2 dòng khi render) giải thích upgrade làm gì — hiện trong CollectionCard
+  rarity?: Rarity;
   stat: string;
   value: number;
   stackable: boolean;
@@ -43,6 +46,7 @@ export interface EnemyDef {
   alpha?: number; // vd Ghost 0.7 để có cảm giác trong suốt
   meleeDodgeChance?: number; // 0-1, xác suất né đòn melee (vd Ghost) — check trong WeaponSystem lúc tính damage melee
   movementPattern?: "straight" | "zigzag"; // vd Bat "zigzag" — xem Enemy.update()
+  description?: string; // chỉ dùng hiển thị tab Monsters của CollectionScene, không ảnh hưởng gameplay
 }
 
 /** Pickup ngẫu nhiên (Heal Potion / Magnet Orb) — xem PickupSystem. */
@@ -81,6 +85,9 @@ export interface BossDef {
   moveSpeed: number;
   skillIds: string[]; // tham chiếu tới bossSkills.json; thứ tự trong mảng = thứ tự ưu tiên khi nhiều skill cùng hết cooldown
   isFinalBoss?: boolean; // true = boss cuối cùng của ván — chết đi thẳng cutscene chiến thắng (slow-motion + fade), KHÔNG rơi Loot Chest như boss thường
+  description?: string; // chỉ dùng hiển thị tab Bosses của CollectionScene, không ảnh hưởng gameplay
+  introText?: string; // đoạn giới thiệu ngắn hiện theo hiệu ứng typewriter trong Boss Intro Cinematic (xem systems/BossIntroController.ts) — không có thì dùng câu mặc định
+  introCameraZoom?: number; // mức zoom camera lúc focus vào Boss trong intro — không có thì dùng GAMEPLAY.BOSS_INTRO_DEFAULT_ZOOM
 }
 
 /**
@@ -89,6 +96,7 @@ export interface BossDef {
  */
 export interface BossSkillDef {
   id: string;
+  name: string; // tên hiển thị (vd "Lao Tới") — dùng cho Collection tab Bosses, xem CollectionManager.getBossEntries()
   type: "dash" | "charge" | "ground_slam" | "summon" | "roar";
   cooldownMs: number;
   telegraphMs?: number; // dash/charge/ground_slam
@@ -212,3 +220,31 @@ export interface WeaponChoice {
 }
 
 export type UpgradeChoice = UpgradeDef | FusionChoice | WeaponChoice;
+
+/** 1 nhiệm vụ trong 1 ngày của Thử Thách 7 Ngày — nhiều mission cùng "missionType" chia sẻ chung 1 bộ đếm theo ngày (progressByDay), chỉ khác targetValue/rewardStars (kiểu mốc luỹ tiến), xem Challenge7DaysManager.addKillProgress(). */
+export interface ChallengeMissionDef {
+  id: string;
+  name: string;
+  missionType: string; // hiện chỉ hỗ trợ "kill_enemies"
+  targetValue: number;
+  rewardStars: number;
+}
+
+/** 1 ngày trong chuỗi Thử Thách 7 Ngày (data/challengeDays.json) — mở TUẦN TỰ theo tiến độ hoàn thành TẤT CẢ mission trong ngày, KHÔNG gắn theo lịch thật (khác DailyRewardDef). */
+export interface ChallengeDayDef {
+  day: number; // 1-7
+  missions: ChallengeMissionDef[]; // 3-4 mission/ngày
+}
+
+/** 1 mốc thưởng theo tổng sao tích lũy từ Thử Thách 7 Ngày (data/challengeMilestones.json). rewardType quyết định claimMilestone() thực sự cấp gì — CHỈ tái dùng cơ chế thật đã có (Coin/unlockWeapon/PermanentUpgradeToken), không phát minh hệ thống mới. */
+export interface ChallengeMilestoneDef {
+  requiredStars: number;
+  rewardId: string;
+  rewardName: string; // text ĐẦY ĐỦ hiển thị cho người chơi, PHẢI rõ số lượng/tên (vd "100 Coin", "+1 Permanent Upgrade Token") — không chỉ icon
+  rewardIcon: string; // "coin" | "weapon" | "token" — key màu icon, xem ui/ChallengeRewardMilestone.ts
+  rewardType: "coin" | "weapon_unlock" | "permanent_upgrade_token";
+  rewardCoin?: number; // rewardType="coin": số Coin thực nhận; rewardType="weapon_unlock": fallback Coin nếu đã unlock hết vũ khí đặc biệt (giống SaveData.claimLoginReward)
+}
+
+/** 1 tab trong CollectionScene — dữ liệu THẬT lấy từ enemies.json/weapons.json/bosses.json/upgrades.json (tái sử dụng, không tạo data trùng), xem CollectionManager. */
+export type CollectionTabId = "monsters" | "weapons" | "bosses" | "cards";

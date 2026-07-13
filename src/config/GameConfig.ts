@@ -9,6 +9,9 @@ import { PauseScene } from "@scenes/PauseScene";
 import { BossLootScene } from "@scenes/BossLootScene";
 import { GameOverScene } from "@scenes/GameOverScene";
 import { VictoryScene } from "@scenes/VictoryScene";
+import { Challenge7DaysScene } from "@scenes/Challenge7DaysScene";
+import { CollectionScene } from "@scenes/CollectionScene";
+import { BossIntroScene } from "@scenes/BossIntroScene";
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -28,7 +31,7 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [BootScene, MenuScene, MapSelectScene, UnlockScene, GameScene, LevelUpScene, PauseScene, BossLootScene, GameOverScene, VictoryScene]
+  scene: [BootScene, MenuScene, MapSelectScene, UnlockScene, GameScene, LevelUpScene, PauseScene, BossLootScene, GameOverScene, VictoryScene, Challenge7DaysScene, CollectionScene, BossIntroScene]
 };
 
 // Hằng số gameplay dùng chung — chỉnh ở đây thay vì rải rác trong code
@@ -77,5 +80,34 @@ export const GAMEPLAY = {
   VICTORY_ZOOM_MS: 400,
   VICTORY_SLOWMO_TIMESCALE: 0.25, // 25% tốc độ bình thường (trong khoảng 20-30% yêu cầu)
   VICTORY_CINEMATIC_TOTAL_MS: 3000, // tổng thời lượng cinematic thật, tính từ lúc boss chết tới lúc tan biến hoàn toàn
-  VICTORY_PARTICLE_COUNT: 8 // số đốm sáng "linh hồn thoát ra" bay lên trong lúc boss tan biến
+  VICTORY_PARTICLE_COUNT: 8, // số đốm sáng "linh hồn thoát ra" bay lên trong lúc boss tan biến
+
+  // Boss Intro Cinematic khi Boss vừa spawn — xem systems/BossIntroController.ts + scenes/BossIntroScene.ts.
+  // Khác VictoryController (chạy trong chính GameScene, chỉ giảm timeScale): GameScene bị PAUSE HẲN
+  // (scene.pause() — mọi cooldown/AI trong codebase so sánh theo raw time nên timeScale=0 không đủ để dừng
+  // hẳn), toàn bộ cinematic (camera pan/zoom, overlay, typewriter, Boss idle animation) chạy trong
+  // BossIntroScene (scene song song, KHÔNG bị pause) — tự tween trực tiếp scrollX/scrollY/zoom của camera
+  // GameScene thay vì gọi camera.pan()/zoomTo() (built-in FX của camera phụ thuộc update loop của scene sở
+  // hữu nó, không đảm bảo chạy khi scene đó đang pause).
+  BOSS_INTRO_SHAKE_MS: 180, // screen shake nhẹ ngay lúc bắt đầu, trước khi camera pan
+  BOSS_INTRO_SHAKE_INTENSITY: 6, // px jitter biên độ
+  BOSS_INTRO_FLASH_MS: 120, // flash tối nhanh ngay sau shake
+  BOSS_INTRO_CAMERA_PAN_MS: 3000, // thời gian camera di chuyển + zoom tới Boss ("giai đoạn mở đầu") — tên Boss chỉ bung ra SAU khi camera dừng hẳn, nên đây cũng là mốc "tầm 3s" tên Boss xuất hiện
+  BOSS_INTRO_DEFAULT_ZOOM: 1.15, // fallback nếu BossDef.introCameraZoom không set
+  BOSS_INTRO_OVERLAY_ALPHA: 0.72, // độ tối overlay màu dungeon (0x0d0614) lúc cinematic đang diễn ra
+  BOSS_INTRO_OVERLAY_FADE_MS: 500, // thời gian fade in/out overlay + vignette FX + text
+  BOSS_INTRO_VIGNETTE_RADIUS: 0.65, // bán kính vùng sáng giữa màn hình của Camera Post FX Vignette (0-1, xem BossIntroController)
+  BOSS_INTRO_VIGNETTE_STRENGTH: 1.8, // độ tối viền màn hình khi Vignette FX bật hết cỡ
+  BOSS_INTRO_TITLE_POP_MS: 400, // tên Boss bung ra (scale 0.7 -> 1, Back.easeOut)
+  BOSS_INTRO_CURSOR_BLINK_MS: 400, // tốc độ nhấp nháy con trỏ "▌"
+  BOSS_INTRO_RETURN_MS: 900, // thời gian camera quay lại Player + overlay/text fade out
+
+  // Tổng thời lượng cinematic THẬT CỐ ĐỊNH 6500ms cho MỌI boss bất kể introText dài ngắn — xem
+  // BossIntroController.computeTypewriterTiming(). Ngân sách còn lại cho typewriter+hold (sau khi trừ
+  // pan-in + return) tính động: tốc độ gõ = 70% ngân sách / số ký tự (kẹp 15-35ms/ký tự), phần dư dùng
+  // làm hold time, đảm bảo TOTAL luôn khớp ~6500ms dù text ngắn hay dài.
+  BOSS_INTRO_TOTAL_MS: 6500,
+  BOSS_INTRO_TYPEWRITER_MIN_MS_PER_CHAR: 15,
+  BOSS_INTRO_TYPEWRITER_MAX_MS_PER_CHAR: 35,
+  BOSS_INTRO_TYPEWRITER_BUDGET_RATIO: 0.7 // % ngân sách text dành cho gõ chữ, phần còn lại là hold
 };

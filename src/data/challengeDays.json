@@ -1,0 +1,58 @@
+[
+  {
+    "day": 1,
+    "missions": [
+      { "id": "c7_d1_m1", "name": "Tiêu diệt 30 quái", "missionType": "kill_enemies", "targetValue": 30, "rewardStars": 1 },
+      { "id": "c7_d1_m2", "name": "Tiêu diệt 60 quái", "missionType": "kill_enemies", "targetValue": 60, "rewardStars": 1 },
+      { "id": "c7_d1_m3", "name": "Tiêu diệt 100 quái", "missionType": "kill_enemies", "targetValue": 100, "rewardStars": 2 }
+    ]
+  },
+  {
+    "day": 2,
+    "missions": [
+      { "id": "c7_d2_m1", "name": "Tiêu diệt 60 quái", "missionType": "kill_enemies", "targetValue": 60, "rewardStars": 1 },
+      { "id": "c7_d2_m2", "name": "Tiêu diệt 120 quái", "missionType": "kill_enemies", "targetValue": 120, "rewardStars": 1 },
+      { "id": "c7_d2_m3", "name": "Tiêu diệt 200 quái", "missionType": "kill_enemies", "targetValue": 200, "rewardStars": 2 }
+    ]
+  },
+  {
+    "day": 3,
+    "missions": [
+      { "id": "c7_d3_m1", "name": "Tiêu diệt 90 quái", "missionType": "kill_enemies", "targetValue": 90, "rewardStars": 1 },
+      { "id": "c7_d3_m2", "name": "Tiêu diệt 180 quái", "missionType": "kill_enemies", "targetValue": 180, "rewardStars": 1 },
+      { "id": "c7_d3_m3", "name": "Tiêu diệt 300 quái", "missionType": "kill_enemies", "targetValue": 300, "rewardStars": 2 }
+    ]
+  },
+  {
+    "day": 4,
+    "missions": [
+      { "id": "c7_d4_m1", "name": "Tiêu diệt 120 quái", "missionType": "kill_enemies", "targetValue": 120, "rewardStars": 1 },
+      { "id": "c7_d4_m2", "name": "Tiêu diệt 240 quái", "missionType": "kill_enemies", "targetValue": 240, "rewardStars": 1 },
+      { "id": "c7_d4_m3", "name": "Tiêu diệt 400 quái", "missionType": "kill_enemies", "targetValue": 400, "rewardStars": 2 }
+    ]
+  },
+  {
+    "day": 5,
+    "missions": [
+      { "id": "c7_d5_m1", "name": "Tiêu diệt 150 quái", "missionType": "kill_enemies", "targetValue": 150, "rewardStars": 1 },
+      { "id": "c7_d5_m2", "name": "Tiêu diệt 300 quái", "missionType": "kill_enemies", "targetValue": 300, "rewardStars": 1 },
+      { "id": "c7_d5_m3", "name": "Tiêu diệt 500 quái", "missionType": "kill_enemies", "targetValue": 500, "rewardStars": 2 }
+    ]
+  },
+  {
+    "day": 6,
+    "missions": [
+      { "id": "c7_d6_m1", "name": "Tiêu diệt 195 quái", "missionType": "kill_enemies", "targetValue": 195, "rewardStars": 1 },
+      { "id": "c7_d6_m2", "name": "Tiêu diệt 390 quái", "missionType": "kill_enemies", "targetValue": 390, "rewardStars": 1 },
+      { "id": "c7_d6_m3", "name": "Tiêu diệt 650 quái", "missionType": "kill_enemies", "targetValue": 650, "rewardStars": 2 }
+    ]
+  },
+  {
+    "day": 7,
+    "missions": [
+      { "id": "c7_d7_m1", "name": "Tiêu diệt 240 quái", "missionType": "kill_enemies", "targetValue": 240, "rewardStars": 1 },
+      { "id": "c7_d7_m2", "name": "Tiêu diệt 480 quái", "missionType": "kill_enemies", "targetValue": 480, "rewardStars": 1 },
+      { "id": "c7_d7_m3", "name": "Tiêu diệt 800 quái", "missionType": "kill_enemies", "targetValue": 800, "rewardStars": 2 }
+    ]
+  }
+]

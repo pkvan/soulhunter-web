@@ -14,6 +14,7 @@ import {
   getDailyRewardForDay,
   claimLoginReward
 } from "@utils/SaveData";
+import { Challenge7DaysManager } from "@systems/Challenge7DaysManager";
 
 const characters = charactersData as CharacterDef[];
 
@@ -87,6 +88,26 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     dailyChallengeButton.on("pointerdown", () => {
       this.scene.start("GameScene", { characterId: getSelectedCharacterId(), dailyChallengeId: challenge.id });
+    });
+
+    // Thử Thách 7 Ngày: mở ngày TUẦN TỰ theo tiến độ hoàn thành nhiệm vụ, khác cơ chế lịch thật của Daily Login Reward.
+    const challengeDay = Challenge7DaysManager.getCurrentDay();
+    const challengeStars = Challenge7DaysManager.getTotalStars();
+    const challengeButton = this.add.text(480, 520, `[ Thử thách 7 ngày — Ngày ${challengeDay} · ${challengeStars}⭐ ]`, {
+      fontSize: "14px",
+      color: "#facc15"
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    challengeButton.on("pointerdown", () => {
+      this.scene.launch("Challenge7DaysScene");
+    });
+
+    // Đặt góc trên-phải (cùng hàng với Coin góc trái) thay vì xếp thêm vào cột giữa vốn đã gần chạm đáy canvas (540px).
+    const collectionButton = this.add.text(944, 16, "[ Collection ]", {
+      fontSize: "14px",
+      color: "#c4b5fd"
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+    collectionButton.on("pointerdown", () => {
+      this.scene.launch("CollectionScene");
     });
 
     // Daily Login Reward (7 ngày): tính streak mới nếu đã sang ngày khác (không tự cộng thưởng), rồi hiện

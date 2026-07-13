@@ -6,6 +6,7 @@ import bossesData from "@data/bosses.json";
 import { EnemyDef, BossDef } from "@types/index";
 import { EventBus, GameEvents } from "@utils/EventBus";
 import { GAMEPLAY } from "@config/GameConfig";
+import { CollectionManager } from "@systems/CollectionManager";
 
 const bosses = bossesData as BossDef[];
 
@@ -33,6 +34,7 @@ export class BossSystem {
 
     const { x, y } = this.getSpawnPositionOutsideCamera();
     this.boss = new Boss(this.scene, x, y, bossDef);
+    CollectionManager.unlockBoss(bossId); // Collection: Boss mở khi gặp (đánh bại luôn kéo theo đã từng gặp)
   }
 
   getBoss(): Boss | null {

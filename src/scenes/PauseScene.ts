@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { GameScene } from "@scenes/GameScene";
 import { Player } from "@entities/Player";
-import { getCardStyle, CardStyle, CardData } from "@ui/LevelUpCard";
+import { getCardStyle, CardStyle, CardData } from "@ui/CardStyle";
 import weaponsData from "@data/weapons.json";
 import upgradesData from "@data/upgrades.json";
 import fusionsData from "@data/fusions.json";

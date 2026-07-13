@@ -13,6 +13,7 @@ import soulCorruptionData from "@data/soulCorruption.json";
 import upgradesData from "@data/upgrades.json";
 import { WeaponDef, SoulCorruptionConfig, UpgradeDef } from "@types/index";
 import { GAMEPLAY } from "@config/GameConfig";
+import { CollectionManager } from "@systems/CollectionManager";
 
 const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
 const upgrades = upgradesData as UpgradeDef[];
@@ -291,6 +292,7 @@ export class WeaponSystem {
     showDamageNumber(this.scene, enemy.sprite.x, enemy.sprite.y, damage);
 
     if (isDead) {
+      CollectionManager.unlockMonster(enemy.def.id); // Collection: Monster mở khi giết lần đầu
       const isElite = enemy.isElite;
       // Elite Enemy (GDD mục 18): % rơi Dark Soul thay vì Soul thường, luôn thưởng thêm Coin (bonusCoinFromElites, xem GameScene.registerKill).
       if (isElite && Phaser.Math.FloatBetween(0, 1) < soulCorruption.darkSoulDropChance) {

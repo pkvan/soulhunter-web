@@ -5,6 +5,7 @@ import weaponsData from "@data/weapons.json";
 import { UpgradeDef, WeaponDef, UpgradeChoice, WeaponChoice } from "@types/index";
 import { FusionSystem } from "@systems/FusionSystem";
 import { isWeaponUnlocked } from "@utils/SaveData";
+import { CollectionManager } from "@systems/CollectionManager";
 
 const upgrades = upgradesData as UpgradeDef[];
 const weapons = weaponsData as WeaponDef[];
@@ -93,6 +94,7 @@ export class UpgradeSystem {
     const current = this.player.stats[def.stat] ?? 0;
     this.player.stats[def.stat] = current + def.value;
     this.player.appliedUpgrades.push(def.id); // xem PauseScene — hiện icon loadout đã chọn trong ván
+    CollectionManager.unlockCard(def.id); // Collection: Card mở khi đã từng chọn ít nhất 1 lần
     // TODO: nếu def.appliesTo tồn tại (ví dụ fireball_size chỉ áp cho fireball) -> lưu riêng thay vì ghi đè stats chung
   }
 
@@ -100,6 +102,7 @@ export class UpgradeSystem {
     if (choice.isNew) {
       this.player.equippedWeapons.push({ weaponId: choice.weaponId, level: 1 });
       this.player.syncSwordHpBonus();
+      CollectionManager.unlockWeapon(choice.weaponId); // Collection: Weapon mở khi nhặt/sở hữu lần đầu
       return;
     }
 

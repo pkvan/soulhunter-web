@@ -25,7 +25,14 @@
       "Bash(rm -rf \"./{docs,src\")",
       "Bash(echo \"done, exit: $?\")",
       "Bash(python3 -)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(b['id'], len\\(b.get\\('introText',''\\)\\), b.get\\('introText'\\)\\) for b in d]\")",
+      "Bash(awk 'NR==3393,NR==4500{print NR\": \"$0}' /Users/admin/Documents/Project/soulhunter-web/node_modules/phaser/types/phaser.d.ts)",
+      "Bash(awk '/class FX \\\\{/,0' /Users/admin/Documents/Project/soulhunter-web/node_modules/phaser/types/phaser.d.ts)",
+      "Bash(grep -n \"class FX$\\\\|class FX \" /Users/admin/Documents/Project/soulhunter-web/node_modules/phaser/types/phaser.d.ts)",
+      "Bash(awk 'NR>=14709 && NR<=16500' /Users/admin/Documents/Project/soulhunter-web/node_modules/phaser/types/phaser.d.ts)",
+      "Bash(awk 'NR>=15084 && NR<=15420' /Users/admin/Documents/Project/soulhunter-web/node_modules/phaser/types/phaser.d.ts)",
+      "Bash(awk 'NR>=15084 && NR<=15600' /Users/admin/Documents/Project/soulhunter-web/node_modules/phaser/types/phaser.d.ts)"
     ]
   }
 }
