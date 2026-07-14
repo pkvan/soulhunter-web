@@ -20,83 +20,91 @@
     "unlockRequires": "forest"
   },
   {
-    "id": "map3",
-    "name": "Map 3",
+    "id": "swamp",
+    "name": "Swamp",
     "order": 3,
-    "theme_color": "0x7f1d1d",
-    "enemyDataFile": "enemies.json",
-    "bossId": "giant_skeleton",
+    "theme_color": "0x4d7c0f",
+    "enemyDataFile": "enemies_swamp.json",
+    "bossId": "poison_hydra",
+    "midBossId": "bog_wraith",
     "difficultyMultiplier": 1.3,
     "unlockRequires": "graveyard"
   },
   {
-    "id": "map4",
-    "name": "Map 4",
+    "id": "frozen_tundra",
+    "name": "Frozen Tundra",
     "order": 4,
-    "theme_color": "0x7f1d1d",
-    "enemyDataFile": "enemies.json",
-    "bossId": "giant_skeleton",
+    "theme_color": "0x38bdf8",
+    "enemyDataFile": "enemies_frozen_tundra.json",
+    "bossId": "frost_titan",
+    "midBossId": "ice_stalker",
     "difficultyMultiplier": 1.45,
-    "unlockRequires": "map3"
+    "unlockRequires": "swamp"
   },
   {
-    "id": "map5",
-    "name": "Map 5",
+    "id": "volcanic",
+    "name": "Volcanic",
     "order": 5,
-    "theme_color": "0x7f1d1d",
-    "enemyDataFile": "enemies.json",
-    "bossId": "giant_skeleton",
+    "theme_color": "0xea580c",
+    "enemyDataFile": "enemies_volcanic.json",
+    "bossId": "inferno_behemoth",
+    "midBossId": "magma_brute",
     "difficultyMultiplier": 1.6,
-    "unlockRequires": "map4"
+    "unlockRequires": "frozen_tundra"
   },
   {
-    "id": "map6",
-    "name": "Map 6",
+    "id": "desert_ruins",
+    "name": "Desert Ruins",
     "order": 6,
-    "theme_color": "0x7f1d1d",
-    "enemyDataFile": "enemies.json",
-    "bossId": "giant_skeleton",
+    "theme_color": "0xd97706",
+    "enemyDataFile": "enemies_desert_ruins.json",
+    "bossId": "pharaohs_curse",
+    "midBossId": "sand_reaper",
     "difficultyMultiplier": 1.75,
-    "unlockRequires": "map5"
+    "unlockRequires": "volcanic"
   },
   {
-    "id": "map7",
-    "name": "Map 7",
+    "id": "corrupted_castle",
+    "name": "Corrupted Castle",
     "order": 7,
-    "theme_color": "0x7f1d1d",
-    "enemyDataFile": "enemies.json",
-    "bossId": "giant_skeleton",
+    "theme_color": "0x581c87",
+    "enemyDataFile": "enemies_corrupted_castle.json",
+    "bossId": "fallen_king",
+    "midBossId": "cursed_knight",
     "difficultyMultiplier": 1.9,
-    "unlockRequires": "map6"
+    "unlockRequires": "desert_ruins"
   },
   {
-    "id": "map8",
-    "name": "Map 8",
+    "id": "crystal_caves",
+    "name": "Crystal Caves",
     "order": 8,
-    "theme_color": "0x7f1d1d",
-    "enemyDataFile": "enemies.json",
-    "bossId": "giant_skeleton",
+    "theme_color": "0x22d3ee",
+    "enemyDataFile": "enemies_crystal_caves.json",
+    "bossId": "crystal_guardian",
+    "midBossId": "crystal_sentinel",
     "difficultyMultiplier": 2.05,
-    "unlockRequires": "map7"
+    "unlockRequires": "corrupted_castle"
   },
   {
-    "id": "map9",
-    "name": "Map 9",
+    "id": "sky_sanctum",
+    "name": "Sky Sanctum",
     "order": 9,
-    "theme_color": "0x7f1d1d",
-    "enemyDataFile": "enemies.json",
-    "bossId": "giant_skeleton",
+    "theme_color": "0xfde047",
+    "enemyDataFile": "enemies_sky_sanctum.json",
+    "bossId": "storm_dragon",
+    "midBossId": "storm_harpy",
     "difficultyMultiplier": 2.2,
-    "unlockRequires": "map8"
+    "unlockRequires": "crystal_caves"
   },
   {
-    "id": "map10",
-    "name": "Map 10",
+    "id": "void_abyss",
+    "name": "Void Abyss",
     "order": 10,
-    "theme_color": "0x7f1d1d",
-    "enemyDataFile": "enemies.json",
-    "bossId": "giant_skeleton",
+    "theme_color": "0x1e1b4b",
+    "enemyDataFile": "enemies_void_abyss.json",
+    "bossId": "soul_devourer",
+    "midBossId": "nightmare_herald",
     "difficultyMultiplier": 2.35,
-    "unlockRequires": "map9"
+    "unlockRequires": "sky_sanctum"
   }
 ]

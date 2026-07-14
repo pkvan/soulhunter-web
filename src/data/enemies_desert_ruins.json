@@ -1,0 +1,7 @@
+[
+  { "id": "sand_slime", "name": "Sand Slime", "hp": 6, "moveSpeed": 59, "damage": 5, "soulValue": 1, "flag": "ground", "tintColor": "0xfde68a", "description": "Khối cát kết dính, di chuyển chậm nhưng bám dai như lún cát." },
+  { "id": "mummy", "name": "Mummy", "hp": 13, "moveSpeed": 76, "damage": 9, "soulValue": 2, "flag": "ground", "tintColor": "0xe4c590", "description": "Xác ướp canh mộ cổ, tốc độ và sát thương tương đương Skeleton thường." },
+  { "id": "desert_wraith", "name": "Desert Wraith", "hp": 11, "moveSpeed": 73, "damage": 7, "soulValue": 2, "flag": "phasing", "tintColor": "0xfbbf24", "alpha": 0.7, "meleeDodgeChance": 0.4, "description": "Linh hồn sa mạc trong suốt, né được đòn cận chiến." },
+  { "id": "sand_golem", "name": "Sand Golem", "hp": 39, "moveSpeed": 48, "damage": 13, "soulValue": 3, "flag": "ground", "tintColor": "0xb45309", "description": "Cỗ máy cát khổng lồ, máu dày và sát thương nặng như Orc." },
+  { "id": "scarab_swarm", "name": "Scarab Swarm", "hp": 6, "moveSpeed": 147, "damage": 4, "soulValue": 1, "flag": "flying", "tintColor": "0x365314", "movementPattern": "zigzag", "description": "Đàn bọ hung bay ngoằn ngoèo tốc độ cao, máu mỏng khó nhắm." }
+]

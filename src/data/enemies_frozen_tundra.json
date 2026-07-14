@@ -1,0 +1,7 @@
+[
+  { "id": "ice_slime", "name": "Ice Slime", "hp": 6, "moveSpeed": 58, "damage": 5, "soulValue": 1, "flag": "ground", "tintColor": "0xbae6fd", "description": "Khối băng nhầy trơn trượt, di chuyển chậm nhưng lạnh buốt khi va chạm." },
+  { "id": "frost_skeleton", "name": "Frost Skeleton", "hp": 13, "moveSpeed": 80, "damage": 9, "soulValue": 2, "flag": "ground", "tintColor": "0xe0f2fe", "description": "Bộ xương phủ băng, tốc độ và sát thương tương đương Skeleton thường." },
+  { "id": "ice_wraith", "name": "Ice Wraith", "hp": 11, "moveSpeed": 72, "damage": 7, "soulValue": 2, "flag": "phasing", "tintColor": "0x7dd3fc", "alpha": 0.7, "meleeDodgeChance": 0.4, "description": "Linh hồn băng giá trong suốt, né được đòn cận chiến." },
+  { "id": "yeti", "name": "Yeti", "hp": 40, "moveSpeed": 47, "damage": 14, "soulValue": 3, "flag": "ground", "tintColor": "0xf0f9ff", "description": "Quái vật tuyết khổng lồ, máu dày và sát thương nặng như Orc." },
+  { "id": "frost_bat", "name": "Frost Bat", "hp": 6, "moveSpeed": 148, "damage": 4, "soulValue": 1, "flag": "flying", "tintColor": "0x38bdf8", "movementPattern": "zigzag", "description": "Dơi băng bay ngoằn ngoèo tốc độ cao, máu mỏng khó trúng đòn." }
+]

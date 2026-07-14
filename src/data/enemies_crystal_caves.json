@@ -1,0 +1,7 @@
+[
+  { "id": "crystal_slime", "name": "Crystal Slime", "hp": 6, "moveSpeed": 60, "damage": 6, "soulValue": 1, "flag": "ground", "tintColor": "0x67e8f9", "description": "Khối pha lê nhầy, sắc cạnh nhẹ dù di chuyển chậm." },
+  { "id": "golem_miner", "name": "Golem Miner", "hp": 13, "moveSpeed": 79, "damage": 9, "soulValue": 2, "flag": "ground", "tintColor": "0x0e7490", "description": "Cỗ máy đá đào hầm, tốc độ và sát thương tương đương Skeleton thường." },
+  { "id": "cave_wraith", "name": "Cave Wraith", "hp": 11, "moveSpeed": 74, "damage": 7, "soulValue": 2, "flag": "phasing", "tintColor": "0xa5f3fc", "alpha": 0.7, "meleeDodgeChance": 0.4, "description": "Linh hồn hang động trong suốt, né được đòn cận chiến." },
+  { "id": "crystal_orc", "name": "Crystal Orc", "hp": 39, "moveSpeed": 49, "damage": 13, "soulValue": 3, "flag": "ground", "tintColor": "0x155e75", "description": "Chiến binh pha lê máu trâu, sát thương nặng như Orc thường." },
+  { "id": "cave_bat", "name": "Cave Bat", "hp": 6, "moveSpeed": 151, "damage": 4, "soulValue": 1, "flag": "flying", "tintColor": "0x22d3ee", "movementPattern": "zigzag", "description": "Dơi hang bay ngoằn ngoèo tốc độ cao, máu mỏng khó nhắm." }
+]

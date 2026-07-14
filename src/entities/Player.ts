@@ -18,6 +18,9 @@ export class Player {
   public appliedUpgrades: string[] = []; // id của UpgradeDef đã chọn trong ván này (kể cả trùng nếu stack) — xem UpgradeSystem.applyUpgrade(), dùng để hiện icon loadout trong PauseScene
   public bonusCoinFromOverflowSoul = 0; // soul dư sau khi đạt MAX_LEVEL quy đổi thành Coin thay vì lãng phí — xem gainSoul() + GameScene.computeCoinEarned()
   private swordHpBonusApplied = false; // đánh dấu đã cộng GAMEPLAY.SWORD_HP_BONUS chưa, tránh cộng/trừ trùng lặp — xem syncSwordHpBonus()
+  // Làm chậm tạm thời (vd Boss skill freeze_pulse) — cùng pattern slowFactor/slowUntil với Enemy.applySlow().
+  private slowFactor = 0;
+  private slowUntil = 0;
   private soulCount = 0;
   private level = 1;
   private soulToNextLevel = 10;
@@ -86,9 +89,13 @@ export class Player {
     }
   }
 
-  update(_delta: number): void {
+  update(time: number, delta: number): void {
     // setVelocity() nhận world units/giây — Arcade Physics tự nhân với delta mỗi step, không cần nhân delta thủ công ở đây.
-    const speed = this.stats.moveSpeed;
+    const slowMultiplier = time < this.slowUntil ? 1 - this.slowFactor : 1;
+    // moveSpeedMultiplier (move_speed_up upgrade) KHÔNG pre-init trong constructor như damageMultiplier/cooldownMultiplier
+    // (những stat đó bắt đầu = 1, upgrade cộng thẳng) — field này bắt đầu undefined, upgrade cộng dồn % thô
+    // (0.1/0.2/...) nên phải tự +1 ở đây lúc đọc, không nhân thẳng giá trị thô vào speed.
+    const speed = this.stats.moveSpeed * slowMultiplier * (1 + (this.stats.moveSpeedMultiplier ?? 0));
     let vx = 0;
     let vy = 0;
     if (this.keys.A.isDown) vx = -1;
@@ -104,12 +111,28 @@ export class Player {
     }
 
     this.sprite.setVelocity(vx * speed, vy * speed);
+
+    // hp_regen upgrade: hồi liên tục theo delta thay vì tick rời rạc mỗi giây — mượt hơn trên HUD, heal() đã tự clamp maxHp.
+    if (this.stats.hpRegenPerSecond) this.heal(this.stats.hpRegenPerSecond * (delta / 1000));
   }
 
+  /**
+   * Thứ tự phòng thủ: Shield (miễn nhiễm hoàn toàn, tiêu 1 charge) -> Dodge (né hẳn, không mất charge) ->
+   * Armor/flatDamageReduction (trừ thẳng vào damage, sàn 0) -> trừ HP. Né/chặn hoàn toàn thì KHÔNG chạy
+   * playHitFeedback (không flash/shake cho đòn không hề trúng).
+   */
   public takeDamage(amount: number): void {
-    // TODO: trừ shieldCharges trước, roll dodgeChance, trừ flatDamageReduction rồi mới trừ HP
-    this.stats.currentHp -= amount;
-    this.playHitFeedback(amount);
+    if (this.stats.shieldCharges > 0) {
+      this.stats.shieldCharges -= 1;
+      return;
+    }
+    if (this.stats.dodgeChance && Phaser.Math.FloatBetween(0, 1) < this.stats.dodgeChance) {
+      return;
+    }
+
+    const reduced = Math.max(0, amount - (this.stats.flatDamageReduction ?? 0));
+    this.stats.currentHp -= reduced;
+    this.playHitFeedback(reduced);
     if (this.stats.currentHp <= 0) {
       EventBus.emit(GameEvents.PLAYER_DIED);
     }
@@ -130,6 +153,12 @@ export class Player {
       isBigHit ? GAMEPLAY.PLAYER_HIT_BIG_SHAKE_DURATION_MS : GAMEPLAY.PLAYER_HIT_SHAKE_DURATION_MS,
       isBigHit ? GAMEPLAY.PLAYER_HIT_BIG_SHAKE_INTENSITY : GAMEPLAY.PLAYER_HIT_SHAKE_INTENSITY
     );
+  }
+
+  /** Gắn hiệu ứng làm chậm (vd Boss skill freeze_pulse) — factor=0.5 nghĩa là di chuyển chậm đi 50%. */
+  public applySlow(factor: number, durationMs: number, time: number): void {
+    this.slowFactor = factor;
+    this.slowUntil = time + durationMs;
   }
 
   public heal(amount: number): void {

@@ -1,6 +1,14 @@
 import mapsData from "@data/maps.json";
 import enemiesForest from "@data/enemies.json";
 import enemiesGraveyard from "@data/enemies_graveyard.json";
+import enemiesSwamp from "@data/enemies_swamp.json";
+import enemiesFrozenTundra from "@data/enemies_frozen_tundra.json";
+import enemiesVolcanic from "@data/enemies_volcanic.json";
+import enemiesDesertRuins from "@data/enemies_desert_ruins.json";
+import enemiesCorruptedCastle from "@data/enemies_corrupted_castle.json";
+import enemiesCrystalCaves from "@data/enemies_crystal_caves.json";
+import enemiesSkySanctum from "@data/enemies_sky_sanctum.json";
+import enemiesVoidAbyss from "@data/enemies_void_abyss.json";
 import bossesData from "@data/bosses.json";
 import { MapDef, EnemyDef, BossDef } from "@types/index";
 
@@ -10,7 +18,15 @@ const bosses = bossesData as BossDef[];
 /** enemyDataFile (string trong maps.json) -> mảng EnemyDef thật đã import sẵn — Vite không hỗ trợ import động theo chuỗi runtime. */
 const ENEMY_DATA_REGISTRY: Record<string, EnemyDef[]> = {
   "enemies.json": enemiesForest as EnemyDef[],
-  "enemies_graveyard.json": enemiesGraveyard as EnemyDef[]
+  "enemies_graveyard.json": enemiesGraveyard as EnemyDef[],
+  "enemies_swamp.json": enemiesSwamp as EnemyDef[],
+  "enemies_frozen_tundra.json": enemiesFrozenTundra as EnemyDef[],
+  "enemies_volcanic.json": enemiesVolcanic as EnemyDef[],
+  "enemies_desert_ruins.json": enemiesDesertRuins as EnemyDef[],
+  "enemies_corrupted_castle.json": enemiesCorruptedCastle as EnemyDef[],
+  "enemies_crystal_caves.json": enemiesCrystalCaves as EnemyDef[],
+  "enemies_sky_sanctum.json": enemiesSkySanctum as EnemyDef[],
+  "enemies_void_abyss.json": enemiesVoidAbyss as EnemyDef[]
 };
 
 export function getAllMaps(): MapDef[] {

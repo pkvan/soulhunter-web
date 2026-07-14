@@ -3,5 +3,11 @@
   { "id": "summon", "name": "Triệu Hồi Quái", "type": "summon", "cooldownMs": 12000, "count": 4 },
   { "id": "ground_slam", "name": "Đập Đất", "type": "ground_slam", "cooldownMs": 9000, "telegraphMs": 800, "radius": 110, "damage": 35 },
   { "id": "charge", "name": "Xung Phong", "type": "charge", "cooldownMs": 7000, "telegraphMs": 600, "speed": 650, "durationMs": 700, "damage": 40 },
-  { "id": "roar", "name": "Gầm Thét", "type": "roar", "cooldownMs": 15000, "radius": 220, "durationMs": 5000, "moveSpeedBuff": 0.3, "damageBuff": 0.2 }
+  { "id": "roar", "name": "Gầm Thét", "type": "roar", "cooldownMs": 15000, "radius": 220, "durationMs": 5000, "moveSpeedBuff": 0.3, "damageBuff": 0.2 },
+  { "id": "teleport", "name": "Dịch Chuyển", "type": "teleport", "cooldownMs": 10000, "radius": 240 },
+  { "id": "meteor", "name": "Thiên Thạch", "type": "meteor", "cooldownMs": 11000, "telegraphMs": 900, "radius": 100, "damage": 38 },
+  { "id": "freeze_pulse", "name": "Xung Đóng Băng", "type": "freeze_pulse", "cooldownMs": 13000, "radius": 150, "slowFactor": 0.5, "durationMs": 3000 },
+  { "id": "poison_cloud", "name": "Mây Độc", "type": "poison_cloud", "cooldownMs": 14000, "radius": 90, "damage": 6, "tickIntervalMs": 800, "durationMs": 4000 },
+  { "id": "heal_self", "name": "Hồi Máu", "type": "heal_self", "cooldownMs": 0, "hpThreshold": 0.3, "healPercent": 0.25 },
+  { "id": "clone", "name": "Phân Thân", "type": "clone", "cooldownMs": 18000, "cloneHp": 120, "cloneDamage": 10, "cloneMoveSpeed": 70, "durationMs": 8000 }
 ]

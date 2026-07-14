@@ -1,0 +1,7 @@
+[
+  { "id": "bog_slime", "name": "Bog Slime", "hp": 6, "moveSpeed": 58, "damage": 5, "soulValue": 1, "flag": "ground", "tintColor": "0x4d7c0f", "description": "Khối nhầy đầm lầy, di chuyển chậm nhưng bám dai như bùn." },
+  { "id": "leech", "name": "Leech", "hp": 13, "moveSpeed": 78, "damage": 9, "soulValue": 2, "flag": "ground", "tintColor": "0x365314", "description": "Đỉa khổng lồ bám theo hút máu, tốc độ và sát thương trung bình." },
+  { "id": "swamp_ghost", "name": "Swamp Ghost", "hp": 11, "moveSpeed": 72, "damage": 7, "soulValue": 2, "flag": "phasing", "tintColor": "0x6ee7b7", "alpha": 0.7, "meleeDodgeChance": 0.4, "description": "Linh hồn lẩn khuất trong sương đầm lầy, né được đòn cận chiến." },
+  { "id": "toad_brute", "name": "Toad Brute", "hp": 38, "moveSpeed": 48, "damage": 13, "soulValue": 3, "flag": "ground", "tintColor": "0x14532d", "description": "Cóc khổng lồ cơ bắp, máu trâu và sát thương nặng khi lao vào." },
+  { "id": "mosquito_swarm", "name": "Mosquito Swarm", "hp": 6, "moveSpeed": 145, "damage": 4, "soulValue": 1, "flag": "flying", "tintColor": "0x84cc16", "movementPattern": "zigzag", "description": "Đàn muỗi bay ngoằn ngoèo tốc độ cao, máu mỏng nhưng khó nhắm." }
+]

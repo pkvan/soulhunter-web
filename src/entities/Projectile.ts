@@ -24,6 +24,7 @@ export class Projectile {
   public pierceRemaining = 0;
   public weaponId = ""; // để WeaponSystem tra lại WeaponDef (kể cả vũ khí fusion) khi xử lý on-hit effect
   public isShrapnel = false; // tia phụ do upgrade Shrapnel bắn ra — chặn đệ quy (tia phụ trúng KHÔNG tự bắn thêm tia phụ)
+  public isCrit = false; // crit_chance/crit_damage upgrade — quyết định lúc bắn (WeaponSystem.fire()), giữ nguyên tới lúc trúng để showDamageNumber hiện đúng màu
   private weaponType: WeaponDef["type"] = "projectile_straight";
   private speed = 200;
   private returning = false;
@@ -39,7 +40,7 @@ export class Projectile {
     this.sprite.setActive(false).setVisible(false);
   }
 
-  fire(x: number, y: number, angleRad: number, weapon: WeaponDef, damage: number, isShrapnel = false): void {
+  fire(x: number, y: number, angleRad: number, weapon: WeaponDef, damage: number, isShrapnel = false, isCrit = false, scaleMultiplier = 1): void {
     this.originX = x;
     this.originY = y;
     this.damage = damage;
@@ -51,10 +52,12 @@ export class Projectile {
     this.returning = false;
     this.active = true;
     this.isShrapnel = isShrapnel;
+    this.isCrit = isCrit;
     this.hitEnemies.clear();
 
     this.sprite.setTexture(PROJECTILE_TEXTURES[weapon.id] ?? "projectile_placeholder");
     this.sprite.setAngle(0);
+    this.sprite.setScale(scaleMultiplier); // fireball_size upgrade: chỉ WeaponSystem truyền khác 1 khi def.id === "fireball"
     this.sprite.setPosition(x, y);
     this.sprite.setActive(true).setVisible(true);
     this.sprite.setVelocity(Math.cos(angleRad) * this.speed, Math.sin(angleRad) * this.speed);

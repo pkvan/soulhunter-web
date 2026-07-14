@@ -93,9 +93,13 @@ export class UpgradeSystem {
   applyUpgrade(def: UpgradeDef): void {
     const current = this.player.stats[def.stat] ?? 0;
     this.player.stats[def.stat] = current + def.value;
+    // max_hp tăng trần HP thì cũng phải cộng thẳng vào currentHp luôn (giống cách SWORD_HP_BONUS làm) —
+    // nếu không player không cảm nhận được gì cho tới lần mất máu/hồi máu tiếp theo.
+    if (def.stat === "maxHp") this.player.stats.currentHp += def.value;
     this.player.appliedUpgrades.push(def.id); // xem PauseScene — hiện icon loadout đã chọn trong ván
     CollectionManager.unlockCard(def.id); // Collection: Card mở khi đã từng chọn ít nhất 1 lần
-    // TODO: nếu def.appliesTo tồn tại (ví dụ fireball_size chỉ áp cho fireball) -> lưu riêng thay vì ghi đè stats chung
+    // appliesTo (vd fireball_size chỉ áp Fireball, sword_range chỉ áp Sword) lọc NGAY TẠI ĐIỂM ĐỌC trong
+    // WeaponSystem.fire() theo def.id của vũ khí đang bắn — không cần lưu riêng ở đây.
   }
 
   applyWeaponChoice(choice: WeaponChoice): void {

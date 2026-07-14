@@ -1,0 +1,7 @@
+[
+  { "id": "void_slime", "name": "Void Slime", "hp": 7, "moveSpeed": 62, "damage": 6, "soulValue": 1, "flag": "ground", "tintColor": "0x1e1b4b", "description": "Khối nhầy hư vô, di chuyển chậm nhưng nuốt chửng ánh sáng quanh nó." },
+  { "id": "nightmare_skeleton", "name": "Nightmare Skeleton", "hp": 14, "moveSpeed": 84, "damage": 10, "soulValue": 2, "flag": "ground", "tintColor": "0x312e81", "description": "Bộ xương ác mộng, tốc độ và sát thương nhỉnh hơn Skeleton thường." },
+  { "id": "void_wraith", "name": "Void Wraith", "hp": 12, "moveSpeed": 75, "damage": 8, "soulValue": 2, "flag": "phasing", "tintColor": "0x4c1d95", "alpha": 0.7, "meleeDodgeChance": 0.4, "description": "Linh hồn vực thẳm trong suốt, né được đòn cận chiến." },
+  { "id": "abyssal_orc", "name": "Abyssal Orc", "hp": 41, "moveSpeed": 50, "damage": 14, "soulValue": 3, "flag": "ground", "tintColor": "0x0c0a1f", "description": "Chiến binh vực thẳm máu trâu nhất trong các Orc, sát thương cực nặng." },
+  { "id": "shadow_bat", "name": "Shadow Bat", "hp": 7, "moveSpeed": 153, "damage": 5, "soulValue": 1, "flag": "flying", "tintColor": "0x6d28d9", "movementPattern": "zigzag", "description": "Dơi bóng tối bay ngoằn ngoèo tốc độ cao, máu mỏng nhưng khó nhắm nhất." }
+]

@@ -33,9 +33,14 @@ const soulCorruption = soulCorruptionData as SoulCorruptionConfig;
 const bosses = bossesData as BossDef[];
 
 // DEBUG TẠM THỜI: thay cho GAMEPLAY.BOSS_SPAWN_AT_MS thật (mặc định 5-10 phút) để test nhanh boss cuối
-// map mà không phải đợi lâu. Mỗi map chỉ có 1 boss cuối (mapDef.bossId, luôn isFinalBoss — xem MapData.ts),
-// spawn ở mốc này. SAU KHI TEST XONG: đổi về giá trị thật, vd GAMEPLAY.BOSS_SPAWN_AT_MS.
+// map mà không phải đợi lâu. Boss cuối (mapDef.bossId, luôn isFinalBoss — xem MapData.ts) spawn ở mốc
+// này. SAU KHI TEST XONG: đổi về giá trị thật, vd GAMEPLAY.BOSS_SPAWN_AT_MS.
 const BOSS_SPAWN_DEBUG_MS = 12000;
+
+// DEBUG TẠM THỜI, cùng lý do với BOSS_SPAWN_DEBUG_MS ở trên — mốc spawn Mid-Boss (mapDef.midBossId, chỉ
+// map3-10 mới có, Forest/Graveyard không có nên field undefined -> khối check trong update() tự bỏ qua).
+// Luôn nhỏ hơn BOSS_SPAWN_DEBUG_MS để Mid-Boss xuất hiện TRƯỚC boss cuối trong cùng ván.
+const MID_BOSS_SPAWN_DEBUG_MS = 6000;
 
 // Trần delta mỗi frame dùng để tính "thời gian chơi thực tế" (elapsedPlayMs). scene.time.now là clock
 // tuyệt đối của Phaser — nếu tab bị trình duyệt tạm ẩn/throttle rồi bù khung hình khi quay lại, nó có thể
@@ -68,9 +73,17 @@ export class GameScene extends Phaser.Scene {
   private elapsedPlayMs = 0; // thời gian chơi thực tế cộng dồn từ delta đã chặn trần — xem MAX_FRAME_DELTA_MS
   private kills = 0;
   private mapId = "forest"; // map đang chơi (xem create()) — dùng để chọn bộ quái/boss + markMapCleared() khi thắng
-  private mapBossId = "giant_skeleton"; // mapDef.bossId của map đang chơi — xem create()
-  private bossSpawned = false; // mỗi map chỉ có đúng 1 boss cuối (mapDef.bossId) — xem BOSS_SPAWN_DEBUG_MS
+  private mapBossId = "giant_skeleton"; // mapDef.bossId (boss CUỐI) của map đang chơi — xem create()
+  private mapMidBossId?: string; // mapDef.midBossId — chỉ map3-10 mới có, Forest/Graveyard undefined (không có Mid-Boss)
+  private bossSpawned = false; // đúng 1 boss cuối (mapBossId) — xem BOSS_SPAWN_DEBUG_MS
+  private midBossSpawned = false; // đúng 1 Mid-Boss (mapMidBossId, nếu map có) — xem MID_BOSS_SPAWN_DEBUG_MS, spawn TRƯỚC bossSpawned
   private isVictoryCinematicActive = false; // true trong suốt Boss Death Cinematic — chặn spawn quái mới, Pause, và Player chết (xem update()/onPlayerDied())
+  // true từ lúc va chạm nhặt Loot Chest tới khi BossLootScene trả kết quả (openBossLoot()/onBossLootResolved())
+  // — chặn Mid-Boss/boss cuối spawn TRONG CÙNG FRAME loot chest vừa được nhặt. Cần thiết từ khi có 2 boss/map:
+  // nếu Mid-Boss chết sát player (rất hay xảy ra vì boss đuổi theo cận chiến), chest rơi tại đúng vị trí đó
+  // và va chạm được nhặt NGAY trong cùng update() — nếu không chặn, boss cuối có thể spawn + tự pause
+  // GameScene (BossIntroScene) trong CHÍNH frame đó, chồng lấn 2 overlay pause (BossLootScene + BossIntroScene).
+  private lootFlowActive = false;
   private comboCount = 0;
   private highestCombo = 0;
   private lastKillAtMs = -Infinity;
@@ -90,6 +103,8 @@ export class GameScene extends Phaser.Scene {
     this.kills = 0;
     this.mapId = data.mapId ?? "forest";
     this.bossSpawned = false;
+    this.midBossSpawned = false;
+    this.lootFlowActive = false;
     this.isVictoryCinematicActive = false;
     this.comboCount = 0;
     this.highestCombo = 0;
@@ -117,6 +132,7 @@ export class GameScene extends Phaser.Scene {
       mapDef.difficultyMultiplier
     );
     this.mapBossId = mapDef.bossId;
+    this.mapMidBossId = mapDef.midBossId;
     this.soulSystem = new SoulSystem(this, this.player);
     this.bossSystem = new BossSystem(this, this.player, this.poolManager, mapEnemies);
     this.victoryController = new VictoryController(this);
@@ -151,7 +167,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     this.elapsedPlayMs += Math.min(delta, MAX_FRAME_DELTA_MS);
 
-    this.player.update(delta);
+    this.player.update(time, delta);
     if (!this.isVictoryCinematicActive) this.spawnSystem.update(time, delta); // Boss Death Cinematic: không spawn quái mới
     this.weaponSystem.update(time, delta);
     this.soulSystem.update(delta);
@@ -181,11 +197,27 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // DEBUG TẠM THỜI — xem comment ở đầu file. Mỗi map chỉ có 1 boss cuối (mapBossId, luôn isFinalBoss).
-    if (!this.isVictoryCinematicActive && !this.bossSpawned && this.elapsedPlayMs >= BOSS_SPAWN_DEBUG_MS && !this.bossSystem.getBoss()) {
+    // DEBUG TẠM THỜI — xem comment ở đầu file. Mid-Boss (nếu map có, isFinalBoss: false) luôn spawn TRƯỚC
+    // boss cuối — dùng chung guard !this.bossSystem.getBoss() nên nếu Mid-Boss chưa chết thì boss cuối tự
+    // đợi (không spawn chồng), y hệt cách "1 boss/lần" cũ hoạt động. !this.lootFlowActive: nếu Mid-Boss vừa
+    // chết NGAY sát player, chest có thể được nhặt luôn trong chính frame này (xem block phía trên) — phải
+    // chặn spawn tiếp trong cùng frame đó, nếu không BossIntroScene (pause GameScene) sẽ chồng lên BossLootScene.
+    if (
+      this.mapMidBossId && !this.isVictoryCinematicActive && !this.lootFlowActive && !this.midBossSpawned &&
+      this.elapsedPlayMs >= MID_BOSS_SPAWN_DEBUG_MS && !this.bossSystem.getBoss()
+    ) {
+      this.midBossSpawned = true;
+      this.bossSystem.spawnBoss(this.mapMidBossId);
+      this.startBossIntro(this.mapMidBossId);
+    }
+
+    if (
+      !this.isVictoryCinematicActive && !this.lootFlowActive && !this.bossSpawned &&
+      this.elapsedPlayMs >= BOSS_SPAWN_DEBUG_MS && !this.bossSystem.getBoss()
+    ) {
       this.bossSpawned = true;
       this.bossSystem.spawnBoss(this.mapBossId);
-      this.startBossIntro();
+      this.startBossIntro(this.mapBossId);
     }
   }
 
@@ -193,11 +225,12 @@ export class GameScene extends Phaser.Scene {
    * Boss vừa spawn (còn đứng yên vì BossSystem.update() chưa chạy lần nào) — pause hẳn GameScene rồi giao
    * toàn bộ cinematic cho BossIntroScene/BossIntroController (camera pan+zoom, overlay, typewriter, Boss
    * idle animation). BossSystem.update() chỉ được gọi từ update() ở trên nên Boss AI tự động "đứng yên"
-   * suốt cinematic mà không cần thêm cờ nào trên Boss — xem docblock BossIntroController.
+   * suốt cinematic mà không cần thêm cờ nào trên Boss — xem docblock BossIntroController. bossId: tổng quát
+   * cho cả Mid-Boss lẫn boss cuối — cinematic không phân biệt loại boss nào, chỉ đọc đúng BossDef.
    */
-  private startBossIntro(): void {
+  private startBossIntro(bossId: string): void {
     const boss = this.bossSystem.getBoss();
-    const bossDef = bosses.find((b) => b.id === this.mapBossId);
+    const bossDef = bosses.find((b) => b.id === bossId);
     if (!boss || !bossDef) {
       // Fallback an toàn nếu thiếu data — vẫn cho boss xuất hiện bình thường thay vì kẹt game.
       EventBus.emit(GameEvents.BOSS_SPAWNED);
@@ -248,6 +281,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Player vừa va chạm nhặt Loot Chest — mở vòng xoay chiến lợi phẩm, tự pause GameScene, chờ BOSS_LOOT_RESOLVED. */
   private openBossLoot(): void {
+    this.lootFlowActive = true; // chặn boss khác spawn (kể cả trong cùng frame này) tới khi resolve xong — xem field comment
     this.scene.stop("LevelUpScene"); // tránh card level-up đè lên vòng xoay nếu đang mở đúng lúc nhặt rương
     EventBus.off(GameEvents.BOSS_LOOT_RESOLVED, this.onBossLootResolved, this);
     EventBus.once(GameEvents.BOSS_LOOT_RESOLVED, this.onBossLootResolved, this);
@@ -263,6 +297,7 @@ export class GameScene extends Phaser.Scene {
   private onBossLootResolved(bonusCoin: number): void {
     this.scene.stop("BossLootScene");
     this.bonusCoinFromBossLoot += bonusCoin;
+    this.lootFlowActive = false;
     this.scene.resume();
     this.scene.launch("LevelUpScene");
   }

@@ -1,0 +1,7 @@
+[
+  { "id": "magma_slime", "name": "Magma Slime", "hp": 6, "moveSpeed": 60, "damage": 6, "soulValue": 1, "flag": "ground", "tintColor": "0xf97316", "description": "Khối nham thạch lỏng, chạm vào bỏng rát dù di chuyển chậm." },
+  { "id": "fire_skeleton", "name": "Fire Skeleton", "hp": 13, "moveSpeed": 82, "damage": 9, "soulValue": 2, "flag": "ground", "tintColor": "0xfb923c", "description": "Bộ xương cháy âm ỉ, tốc độ và sát thương tương đương Skeleton thường." },
+  { "id": "flame_ghost", "name": "Flame Ghost", "hp": 11, "moveSpeed": 73, "damage": 7, "soulValue": 2, "flag": "phasing", "tintColor": "0xfacc15", "alpha": 0.7, "meleeDodgeChance": 0.4, "description": "Linh hồn lửa trong suốt, né được đòn cận chiến." },
+  { "id": "lava_orc", "name": "Lava Orc", "hp": 38, "moveSpeed": 49, "damage": 13, "soulValue": 3, "flag": "ground", "tintColor": "0x7c2d12", "description": "Chiến binh nham thạch máu trâu, sát thương nặng như Orc thường." },
+  { "id": "fire_bat", "name": "Fire Bat", "hp": 6, "moveSpeed": 150, "damage": 4, "soulValue": 1, "flag": "flying", "tintColor": "0xef4444", "movementPattern": "zigzag", "description": "Dơi lửa bay ngoằn ngoèo tốc độ cao, máu mỏng khó nhắm." }
+]

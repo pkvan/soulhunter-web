@@ -4,17 +4,32 @@
 
 ## Boss data-driven
 
-3 boss hiện có (mỗi map 1 boss cuối riêng, đều `isFinalBoss: true` trong data), mỗi boss chỉ khai báo `skillIds` tham chiếu tới `bossSkills.json` (không hardcode số liệu riêng trong `Boss.ts`):
+19 boss hiện có, mỗi boss chỉ khai báo `skillIds` tham chiếu tới `bossSkills.json` (không hardcode số liệu riêng trong `Boss.ts`). Từ map3 (Swamp) trở đi, MỖI map có **2 boss**: 1 Mid-Boss giữa ván (`mapDef.midBossId`, `isFinalBoss: false` — chết rơi Loot Chest như quái boss thường) và 1 boss cuối kết thúc map (`mapDef.bossId`, luôn `isFinalBoss: true` — kích hoạt Victory cinematic). Forest/Graveyard KHÔNG có Mid-Boss (chỉ 1 boss/map, `midBossId` để trống) — xem [MAP.md](./MAP.md) danh sách map đầy đủ.
 
-| Boss | Map | Skill |
-|---|---|---|
-| Giant Skeleton | Forest (+ mọi map placeholder Map 3-10, xem `maps.json`) | Dash, Summon, Ground Slam |
-| Grave Keeper | Graveyard | Charge, Summon, Ground Slam |
-| Orc Warlord | Chưa gán map nào (data sẵn, chưa wire) | Charge, Roar, Ground Slam |
+| Map | Mid-Boss | Skill | Boss cuối | Skill |
+|---|---|---|---|---|
+| Forest | — | — | Giant Skeleton | Dash, Summon, Ground Slam |
+| Graveyard | — | — | Grave Keeper | Charge, Summon, Ground Slam |
+| Swamp | Bog Wraith | Summon, Poison Cloud, Dash | Poison Hydra | Poison Cloud, Heal Self, Ground Slam, Roar |
+| Frozen Tundra | Ice Stalker | Dash, Freeze Pulse, Teleport | Frost Titan | Freeze Pulse, Charge, Ground Slam, Summon |
+| Volcanic | Magma Brute | Charge, Meteor, Ground Slam | Inferno Behemoth | Meteor, Roar, Charge, Clone |
+| Desert Ruins | Sand Reaper | Teleport, Summon, Dash | Pharaoh's Curse | Summon, Clone, Ground Slam, Meteor |
+| Corrupted Castle | Cursed Knight | Charge, Clone, Dash | Fallen King | Clone, Roar, Charge, Teleport |
+| Crystal Caves | Crystal Sentinel | Ground Slam, Freeze Pulse, Summon | Crystal Guardian | Freeze Pulse, Meteor, Ground Slam, Heal Self |
+| Sky Sanctum | Storm Harpy | Dash, Teleport, Roar | Storm Dragon | Teleport, Roar, Charge, Meteor |
+| Void Abyss | Nightmare Herald | Poison Cloud, Clone, Teleport | Soul Devourer (mạnh nhất) | Dash, Summon, Charge, Ground Slam, Heal Self (5 skill) |
 
-Boss xuất hiện ở phút thứ 5 (cấu hình qua `GAMEPLAY.BOSS_SPAWN_AT_MS`). Mỗi boss có banner "XUẤT HIỆN" (scale-in + screen shake) và HP bar màu riêng trên HUD theo `bosses.json.color`. Ván chỉ kết thúc khi hạ được boss cuối cùng.
+`Orc Warlord` (Charge, Roar, Ground Slam) là data có sẵn nhưng chưa gán map nào. Đã đối chiếu: cả 19 boss có tổ hợp `skillIds` KHÔNG trùng hoàn toàn với nhau.
+
+Boss xuất hiện ở phút thứ 5 (cấu hình qua `GAMEPLAY.BOSS_SPAWN_AT_MS`, Mid-Boss xuất hiện sớm hơn qua hằng số riêng — xem `GameScene.ts`). Mỗi boss có banner "XUẤT HIỆN" (scale-in + screen shake) và HP bar màu riêng trên HUD theo `bosses.json.color`. Ván chỉ kết thúc khi hạ được boss cuối cùng.
 
 Skill nào hết cooldown trước trong `skillIds` được ưu tiên dùng trước (tránh spam dồn dập). Cơ chế `Boss.update()`/`BossSystem` xem [ARCHITECTURE.md](../architecture/ARCHITECTURE.md).
+
+### Mid-Boss + Boss cuối trong cùng 1 map
+
+`BossSystem` chỉ giữ 1 boss instance/lần (không pool) — Mid-Boss và boss cuối dùng CHUNG guard `!bossSystem.getBoss()` trong `GameScene.update()` nên tự tuần tự: Mid-Boss spawn trước, boss cuối chỉ spawn khi Mid-Boss đã chết hẳn (dù mốc thời gian debug của boss cuối đã tới trước đó). `startBossIntro(bossId)` tổng quát cho cả 2 loại — Boss Intro Cinematic không phân biệt Mid-Boss hay boss cuối, chỉ đọc đúng `BossDef` theo `bossId` truyền vào.
+
+**Gotcha đã gặp và sửa**: nếu Mid-Boss chết ngay sát player (rất hay xảy ra vì boss luôn đuổi theo cận chiến), Loot Chest rơi đúng vị trí đó và có thể được nhặt NGAY trong cùng 1 frame update() — nếu không chặn, boss cuối có thể spawn + tự pause GameScene (qua Boss Intro Cinematic) ngay trong chính frame đó, chồng lấn 2 overlay pause (vòng quay Loot Chest + Boss Intro cùng lúc). Sửa bằng cờ `GameScene.lootFlowActive` (true từ lúc va chạm nhặt rương tới khi `BossLootScene` trả kết quả) — cả 2 điều kiện spawn Mid-Boss/boss cuối đều check thêm `!this.lootFlowActive`.
 
 ## Boss Intro Cinematic
 
@@ -56,6 +71,21 @@ Mỗi Boss khai báo riêng trong `bosses.json` (không hardcode trong `BossIntr
 Hằng số dùng chung cho mọi Boss (thời gian shake/flash/pan/return, bán kính+cường độ Vignette FX, tốc độ gõ chữ, tổng thời lượng...) nằm ở `GameConfig.ts` `GAMEPLAY.BOSS_INTRO_*` — thêm Boss mới chỉ cần khai báo `introText`/`introCameraZoom` trong data, không cần sửa code.
 
 CHƯA có âm thanh (gõ chữ, nhạc nền lúc cinematic) — dự án chưa có SoundManager/SFX, xem [ROADMAP.md](../development/ROADMAP.md).
+
+## Boss Skills (kiến trúc plug-in)
+
+`Boss.ts` đọc `type` trong `bossSkills.json` để biết chạy state nào — thêm skill mới chỉ cần thêm entry data + 1 case trong `Boss.ts`/`BossSystem.ts`, không đổi kiến trúc. Phần lớn skill dùng cờ `pending*` (Boss tự set, `BossSystem.update()` đọc mỗi frame rồi tự reset `false`) cho phần cần `PoolManager`/`Player` mà `Boss` không giữ trực tiếp — giống hệt pattern `pendingSummon`/`pendingSlamDamage`/`pendingRoar` gốc.
+
+5 skill gốc: **Dash**/**Charge** (lao nhanh theo hướng player, telegraph rồi lao, khác nhau tốc độ/damage/cooldown), **Ground Slam** (telegraph vòng tròn tại vị trí boss rồi AOE damage), **Summon** (triệu hồi quái từ bộ quái của map qua `PoolManager`), **Roar** (buff moveSpeed/damage tạm thời cho quái thường quanh boss).
+
+6 skill mới:
+
+- **Teleport** — tức thời, KHÔNG qua telegraph/BossSystem: `Boss.executeTeleport()` tự tính điểm ngẫu nhiên quanh player (bán kính `radius`, cách tối thiểu 40% bán kính để không lộ ngay cạnh player) rồi `setPosition()` thẳng, kèm 2 vòng flash trắng (biến mất + xuất hiện, tự vẽ trong `Boss` vì đã có sẵn `scene`).
+- **Meteor** — TÁI DÙNG NGUYÊN cờ `pendingSlamDamage`/`slamCenterX/Y/Radius/Damage` của Ground Slam (cùng cơ chế AOE, BossSystem không cần biết đây là Meteor hay Slam) — chỉ khác tâm telegraph: chốt NGAY tại vị trí player lúc bắt đầu cast (không đuổi theo suốt telegraph), vẽ vòng cảnh báo cố định tại đó, player phải tự né ra.
+- **Poison Cloud** — thả tại vị trí boss lúc cast, tạo 1 `PoisonZone` sống ĐỘC LẬP trong `BossSystem` (không phụ thuộc Boss còn sống hay không) — Graphics tròn xanh lá bán trong suốt, tick damage cho player mỗi `tickIntervalMs` nếu đang đứng trong `radius`, tự dọn sau `durationMs`.
+- **Heal Self** — PASSIVE theo ngưỡng HP, KHÔNG nằm trong vòng xoay cooldown như skill khác (`Boss` constructor tách riêng `healSelfDef` khỏi mảng `skills`, không đi qua `tryStartSkill()`) — tự kiểm tra trong `Boss.takeDamage()`: HP xuống dưới `hpThreshold` (mặc định 30%) thì hồi `healPercent` (mặc định 25%) maxHp, có cờ `healSelfUsed` chặn tuyệt đối kích hoạt lần 2 trong cùng trận.
+- **Clone** — TÁI DÙNG THẲNG `PoolManager.getEnemy()`: `BossSystem.spawnClone()` tổng hợp 1 `EnemyDef` tại runtime (hp/damage/moveSpeed thấp theo `cloneHp/cloneDamage/cloneMoveSpeed`, tint theo màu boss, alpha 0.55 "mờ hơn bản gốc") rồi spawn như 1 quái thường — AI đuổi theo, va chạm gây damage player, bị vũ khí player gây damage, rơi Soul lúc chết đều chạy MIỄN PHÍ qua `Enemy`/`CombatSystem`/`WeaponSystem` có sẵn, không viết entity mới. Chỉ cần tự cưỡng bức hết hạn sau `cloneDurationMs` (field `durationMs`) nếu player chưa kịp giết — theo dõi qua mảng `activeClones` riêng trong `BossSystem`.
+- **Freeze Pulse** — tức thời, phát vòng xung mở rộng quanh boss (tự vẽ trong `Boss`, thuần hình ảnh) — `BossSystem` kiểm tra khoảng cách player tới boss lúc cast, nếu trong `radius` thì gọi `player.applySlow(slowFactor, durationMs, time)` (method mới trên `Player`, cùng pattern `slowFactor`/`slowUntil` với `Enemy.applySlow()` sẵn có — `Player.update()` giờ nhận thêm tham số `time` để tính).
 
 ## Boss Loot Chest (boss KHÔNG phải Final Boss)
 

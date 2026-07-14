@@ -55,7 +55,14 @@ export class WeaponSystem {
       const def = allWeaponDefs.find((w) => w.id === equipped.weaponId);
       if (!def) continue;
 
-      const cooldown = def.baseCooldownMs * this.player.stats.cooldownMultiplier;
+      // cooldown_reduction upgrade (globalCooldownReduction, không pre-init nên mặc định undefined -> ?? 0):
+      // lớp giảm cooldown RIÊNG, cộng thêm vào cooldownMultiplier (attack_speed_up) chứ không thay thế —
+      // clamp sàn COOLDOWN_REDUCTION_MIN_MULTIPLIER để không rơi về 0/âm dù stack nhiều.
+      const reductionMultiplier = Math.max(
+        GAMEPLAY.COOLDOWN_REDUCTION_MIN_MULTIPLIER,
+        1 - (this.player.stats.globalCooldownReduction ?? 0)
+      );
+      const cooldown = def.baseCooldownMs * this.player.stats.cooldownMultiplier * reductionMultiplier;
       const last = this.lastFiredAt[def.id] ?? 0;
       if (time - last >= cooldown) {
         this.fire(def, equipped.level, time);
@@ -68,12 +75,19 @@ export class WeaponSystem {
   }
 
   private fire(def: WeaponDef, level: number, time: number): void {
-    const damage = def.baseDamage * (1 + (level - 1) * 0.1) * this.player.stats.damageMultiplier;
+    let damage = def.baseDamage * (1 + (level - 1) * 0.1) * this.player.stats.damageMultiplier;
+    // crit_chance/crit_damage upgrade: cả 2 stat đã pre-init trong Player constructor (critChance=0.05,
+    // critDamageMultiplier=1.5) nên đọc thẳng, không cần ?? — roll 1 lần/lượt bắn, áp dụng đều cho mọi loại vũ khí.
+    const isCrit = Phaser.Math.FloatBetween(0, 1) < this.player.stats.critChance;
+    if (isCrit) damage *= this.player.stats.critDamageMultiplier;
 
     switch (def.type) {
       case "melee": {
         // MVP: quét vòng tròn quanh player trong def.baseRange thay vì vòng cung có hướng
-        const range = (def.baseRange as number) ?? 60;
+        // sword_range upgrade (swordRangeMultiplier, appliesTo "sword"): chỉ nhân thêm khi ĐÚNG vũ khí Sword đang bắn.
+        const baseRange = (def.baseRange as number) ?? 60;
+        const rangeMultiplier = def.id === "sword" ? 1 + (this.player.stats.swordRangeMultiplier ?? 0) : 1;
+        const range = baseRange * rangeMultiplier;
         const slashColor = def.slashColor !== undefined ? Number(def.slashColor) : 0xf5f5f5;
         this.drawSwordSlash(range, slashColor);
 
@@ -88,7 +102,7 @@ export class WeaponSystem {
           const dodgeChance = enemy.def.meleeDodgeChance ?? 0;
           if (dodgeChance > 0 && Phaser.Math.FloatBetween(0, 1) < dodgeChance) continue; // né đòn melee (vd Ghost)
 
-          this.applyDamage(enemy, damage);
+          this.applyDamage(enemy, damage, isCrit);
           hitEnemies.push(enemy);
         }
         for (const enemy of hitEnemies) {
@@ -101,7 +115,7 @@ export class WeaponSystem {
             this.player.sprite.x, this.player.sprite.y,
             boss.sprite.x, boss.sprite.y
           );
-          if (distBoss <= range) this.applyDamageToBoss(boss, damage);
+          if (distBoss <= range) this.applyDamageToBoss(boss, damage, isCrit);
         }
         break;
       }
@@ -110,13 +124,21 @@ export class WeaponSystem {
       case "projectile_return": {
         const target = this.findNearestTarget();
         if (!target) break;
-        const projectile = this.poolManager.getProjectile();
-        if (!projectile) break;
-        const angle = Phaser.Math.Angle.Between(
+        const baseAngle = Phaser.Math.Angle.Between(
           this.player.sprite.x, this.player.sprite.y,
           target.x, target.y
         );
-        projectile.fire(this.player.sprite.x, this.player.sprite.y, angle, def, damage);
+        // fireball_size upgrade (appliesTo "fireball"): scale hình ảnh, KHÔNG mở rộng PROJECTILE_HIT_RADIUS (giữ đơn giản, đúng mô tả "tăng kích thước").
+        const scaleMultiplier = def.id === "fireball" ? 1 + (this.player.stats.fireballSizeMultiplier ?? 0) : 1;
+        // projectile_plus upgrade (projectileCount, không appliesTo -> áp mọi vũ khí loại projectile): bắn thêm N viên dàn quạt quanh hướng target gốc.
+        const totalShots = 1 + (this.player.stats.projectileCount ?? 0);
+        const spreadRad = Phaser.Math.DegToRad(GAMEPLAY.PROJECTILE_PLUS_SPREAD_DEG);
+        for (let i = 0; i < totalShots; i++) {
+          const projectile = this.poolManager.getProjectile();
+          if (!projectile) break; // pool hết chỗ, bỏ qua phần còn lại của loạt bắn này
+          const angle = baseAngle + (i - (totalShots - 1) / 2) * spreadRad;
+          projectile.fire(this.player.sprite.x, this.player.sprite.y, angle, def, damage, false, isCrit, scaleMultiplier);
+        }
         break;
       }
       case "random_target": {
@@ -126,13 +148,17 @@ export class WeaponSystem {
           : this.poolManager.getAllActiveEnemies();
         if (pool.length === 0) break;
 
-        const target = Phaser.Utils.Array.GetRandom(pool);
-        this.drawLightningEffect(target.sprite.x, target.sprite.y);
-        if (target instanceof Boss) {
-          this.applyDamageToBoss(target, damage); // chưa áp on-hit effect (chain/dot/slow) lên boss ở MVP
-        } else {
-          this.applyDamage(target, damage);
-          this.applyOnHitEffects(target, def, damage, time, [target]);
+        // projectile_plus upgrade áp cho random_target (vd Lightning) bằng cách zap thêm N mục tiêu ngẫu nhiên khác thay vì chỉ 1.
+        const shotCount = Math.min(1 + (this.player.stats.projectileCount ?? 0), pool.length);
+        const targets = Phaser.Utils.Array.Shuffle(pool).slice(0, shotCount);
+        for (const target of targets) {
+          this.drawLightningEffect(target.sprite.x, target.sprite.y);
+          if (target instanceof Boss) {
+            this.applyDamageToBoss(target, damage, isCrit); // chưa áp on-hit effect (chain/dot/slow) lên boss ở MVP
+          } else {
+            this.applyDamage(target, damage, isCrit);
+            this.applyOnHitEffects(target, def, damage, time, [target]);
+          }
         }
         break;
       }
@@ -153,7 +179,7 @@ export class WeaponSystem {
           boss.sprite.x, boss.sprite.y
         );
         if (distBoss <= GAMEPLAY.PROJECTILE_HIT_RADIUS) {
-          this.applyDamageToBoss(boss, projectile.damage);
+          this.applyDamageToBoss(boss, projectile.damage, projectile.isCrit);
           projectile.registerHit(boss);
         }
       }
@@ -168,7 +194,7 @@ export class WeaponSystem {
         );
         if (dist > GAMEPLAY.PROJECTILE_HIT_RADIUS) continue;
 
-        this.applyDamage(enemy, projectile.damage);
+        this.applyDamage(enemy, projectile.damage, projectile.isCrit);
         const def = allWeaponDefs.find((w) => w.id === projectile.weaponId);
         if (def) this.applyOnHitEffects(enemy, def, projectile.damage, time, [enemy], projectile.sprite.x, projectile.sprite.y, projectile);
         projectile.registerHit(enemy);
@@ -223,7 +249,21 @@ export class WeaponSystem {
     }
 
     if (def.lifeStealPercent !== undefined) {
-      this.player.heal(damage * (def.lifeStealPercent as number));
+      this.player.heal(damage * (def.lifeStealPercent as number)); // life steal RIÊNG của vũ khí fusion (vd Blood ___), khác life_steal upgrade — xem applyDamage()/applyDamageToBoss() cho phần global
+    }
+
+    // poison upgrade (poisonChance, không appliesTo -> áp mọi loại vũ khí): % mỗi đòn trúng trực tiếp tự
+    // gây thêm DOT độc lập, dùng số liệu cố định ở GAMEPLAY.POISON_PROC_* (không phụ thuộc dotDamage/dotDamageRatio
+    // sẵn có của vũ khí — nếu weapon đã có DOT riêng (vd Fireball) và cùng lúc proc trúng, DOT sau sẽ ghi đè
+    // DOT trước do Enemy chỉ giữ 1 slot DOT — chấp nhận được vì poisonChance mặc định thấp (15%/stack).
+    const poisonChance = this.player.stats.poisonChance ?? 0;
+    if (poisonChance > 0 && Phaser.Math.FloatBetween(0, 1) < poisonChance) {
+      enemy.applyDot(
+        damage * GAMEPLAY.POISON_PROC_DOT_DAMAGE_RATIO,
+        GAMEPLAY.POISON_PROC_DOT_DURATION_MS,
+        GAMEPLAY.POISON_PROC_DOT_TICK_INTERVAL_MS,
+        time
+      );
     }
 
     if (def.chainRadius !== undefined) {
@@ -287,18 +327,22 @@ export class WeaponSystem {
   }
 
   /** Gây damage, hiện damage number, và xử lý chết (soul/Dark Soul + despawn + kill count) — dùng chung cho mọi loại vũ khí. */
-  private applyDamage(enemy: Enemy, damage: number): void {
+  /** isCrit chỉ để hiện đúng màu/size DamageNumber — damage truyền vào đã NHÂN sẵn critDamageMultiplier từ fire(). */
+  private applyDamage(enemy: Enemy, damage: number, isCrit = false): void {
     const isDead = enemy.takeDamage(damage);
-    showDamageNumber(this.scene, enemy.sprite.x, enemy.sprite.y, damage);
+    showDamageNumber(this.scene, enemy.sprite.x, enemy.sprite.y, damage, isCrit);
+    this.applyGlobalLifeSteal(damage);
 
     if (isDead) {
       CollectionManager.unlockMonster(enemy.def.id); // Collection: Monster mở khi giết lần đầu
       const isElite = enemy.isElite;
+      // exp_gain upgrade (soulValueMultiplier, không pre-init -> ?? 0): nhân thêm vào MỌI loại soul rơi ra, kể cả Dark Soul.
+      const soulValue = enemy.def.soulValue * (1 + (this.player.stats.soulValueMultiplier ?? 0));
       // Elite Enemy (GDD mục 18): % rơi Dark Soul thay vì Soul thường, luôn thưởng thêm Coin (bonusCoinFromElites, xem GameScene.registerKill).
       if (isElite && Phaser.Math.FloatBetween(0, 1) < soulCorruption.darkSoulDropChance) {
-        this.soulSystem.spawnDarkSoul(enemy.sprite.x, enemy.sprite.y, enemy.def.soulValue * soulCorruption.darkSoulValueMultiplier);
+        this.soulSystem.spawnDarkSoul(enemy.sprite.x, enemy.sprite.y, soulValue * soulCorruption.darkSoulValueMultiplier);
       } else {
-        this.soulSystem.spawnSoul(enemy.sprite.x, enemy.sprite.y, enemy.def.soulValue);
+        this.soulSystem.spawnSoul(enemy.sprite.x, enemy.sprite.y, soulValue);
       }
       enemy.despawn();
       this.onEnemyKilled(isElite);
@@ -306,9 +350,22 @@ export class WeaponSystem {
   }
 
   /** Boss không đi qua PoolManager (chỉ 1 instance) nên tách riêng khỏi applyDamage — BossSystem tự xử lý chết/BOSS_DEFEATED. */
-  private applyDamageToBoss(boss: Boss, damage: number): void {
-    showDamageNumber(this.scene, boss.sprite.x, boss.sprite.y, damage);
+  private applyDamageToBoss(boss: Boss, damage: number, isCrit = false): void {
+    showDamageNumber(this.scene, boss.sprite.x, boss.sprite.y, damage, isCrit);
+    this.applyGlobalLifeSteal(damage);
     this.bossSystem.applyDamageToBoss(damage);
+  }
+
+  /**
+   * life_steal upgrade (lifeStealPercent trên player.stats, pre-init = 0) — khác HẲN def.lifeStealPercent
+   * trong applyOnHitEffects (đó là lifesteal RIÊNG của 1 vũ khí fusion cụ thể, đọc từ WeaponDef). Đây là
+   * stat toàn cục nên đặt ở 1 điểm chung applyDamage/applyDamageToBoss, áp dụng cho MỌI nguồn damage
+   * (melee/projectile/random_target/DOT tick/chain/AOE/boss) thay vì rải theo từng loại vũ khí.
+   */
+  private applyGlobalLifeSteal(damage: number): void {
+    if (this.player.stats.lifeStealPercent > 0) {
+      this.player.heal(damage * this.player.stats.lifeStealPercent);
+    }
   }
 
   /** Vòng tròn lóe lên tại bán kính đánh melee, fade out sau ~150ms. Màu mặc định trắng/bạc (Sword), vũ khí fusion melee dùng màu riêng. */

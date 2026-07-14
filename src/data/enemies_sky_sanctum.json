@@ -1,0 +1,7 @@
+[
+  { "id": "wind_slime", "name": "Wind Slime", "hp": 6, "moveSpeed": 61, "damage": 6, "soulValue": 1, "flag": "ground", "tintColor": "0xe0f2fe", "description": "Khối nhầy gió cuốn, di chuyển chậm nhưng lượn theo luồng khí." },
+  { "id": "cloud_skeleton", "name": "Cloud Skeleton", "hp": 13, "moveSpeed": 83, "damage": 9, "soulValue": 2, "flag": "ground", "tintColor": "0xf8fafc", "description": "Bộ xương phủ mây, tốc độ và sát thương tương đương Skeleton thường." },
+  { "id": "storm_ghost", "name": "Storm Ghost", "hp": 11, "moveSpeed": 74, "damage": 7, "soulValue": 2, "flag": "phasing", "tintColor": "0x94a3b8", "alpha": 0.7, "meleeDodgeChance": 0.4, "description": "Linh hồn bão tố trong suốt, né được đòn cận chiến." },
+  { "id": "sky_orc", "name": "Sky Orc", "hp": 39, "moveSpeed": 50, "damage": 13, "soulValue": 3, "flag": "ground", "tintColor": "0x0ea5e9", "description": "Chiến binh trời cao máu trâu, sát thương nặng như Orc thường." },
+  { "id": "griffon", "name": "Griffon", "hp": 8, "moveSpeed": 152, "damage": 5, "soulValue": 1, "flag": "flying", "tintColor": "0xfacc15", "movementPattern": "zigzag", "description": "Sư tử đầu chim bay ngoằn ngoèo tốc độ cao, khó nhắm dù không quá trâu." }
+]

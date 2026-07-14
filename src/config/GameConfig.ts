@@ -70,6 +70,15 @@ export const GAMEPLAY = {
   ICE_SHARD_FREEZE_DURATION_MS: 1200, // freeze_chance upgrade: đóng băng HẲN (factor 1) thay vì chỉ slow baseline, xem WeaponSystem.applyOnHitEffects
   SWORD_HP_BONUS: 30, // cộng thêm Max HP khi Sword nằm trong equippedWeapons, trừ lại khi mất (fusion) — xem Player.syncSwordHpBonus()
 
+  // poison upgrade (poisonChance): % mỗi đòn trúng (melee/projectile/random_target) gây thêm DOT độc lập với
+  // dotDamage/dotDamageRatio riêng của vũ khí (vd Fireball/Ice Shard) — xem WeaponSystem.applyOnHitEffects.
+  POISON_PROC_DOT_DAMAGE_RATIO: 0.5, // mỗi tick = 50% damage đòn gốc
+  POISON_PROC_DOT_DURATION_MS: 2500,
+  POISON_PROC_DOT_TICK_INTERVAL_MS: 500,
+
+  PROJECTILE_PLUS_SPREAD_DEG: 12, // projectile_plus upgrade: góc lệch giữa các viên đạn bắn thêm (projectile_straight/pierce/return), xem WeaponSystem.fire()
+  COOLDOWN_REDUCTION_MIN_MULTIPLIER: 0.2, // cooldown_reduction upgrade: chặn không cho cooldown về 0/âm dù stack nhiều — tối đa nhanh gấp 5x base rate
+
   LOOT_CHEST_COLLECT_RADIUS: 30, // khoảng cách 2 tâm được tính là player va chạm nhặt Loot Chest (rương chiến lợi phẩm boss giữa chừng) — xem GameScene.update()
 
   // Boss Death Cinematic khi hạ Final Boss (isFinalBoss: true trong bosses.json) — xem systems/VictoryController.ts.

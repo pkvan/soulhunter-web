@@ -113,11 +113,26 @@ export class MenuScene extends Phaser.Scene {
     // Daily Login Reward (7 ngày): tính streak mới nếu đã sang ngày khác (không tự cộng thưởng), rồi hiện
     // popup "Nhận thưởng" nếu còn phần thưởng hôm nay chưa claim — xem SaveData.checkAndAdvanceLoginStreak().
     checkAndAdvanceLoginStreak();
+
+    // Icon cố định góc dưới-trái để mở lại popup Điểm Danh bất kỳ lúc nào (kể cả đã nhận thưởng hôm nay,
+    // xem lại streak) — khác với popup tự động bên dưới chỉ bật khi còn thưởng CHƯA nhận.
+    const loginIconX = 16;
+    const loginIconY = 512;
+    const loginIcon = this.add.text(loginIconX, loginIconY, "🎁", { fontSize: "26px" })
+      .setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
+    this.add.text(loginIconX + 30, loginIconY, "Điểm danh", { fontSize: "11px", color: "#9ca3af" }).setOrigin(0, 0.5);
+    if (hasPendingLoginReward()) {
+      // Chấm đỏ báo còn thưởng chưa nhận, giống badge thông báo app thường — mất khi đã claim hôm đó.
+      this.add.circle(loginIconX + 20, loginIconY - 13, 5, 0xef4444).setStrokeStyle(1, 0x1a1a1a);
+    }
+    loginIcon.on("pointerdown", () => this.showLoginRewardModal());
+
     if (hasPendingLoginReward()) this.showLoginRewardModal();
   }
 
   private showLoginRewardModal(): void {
     const currentDay = getLoginStreakDay();
+    const alreadyClaimedToday = !hasPendingLoginReward();
     const elements: Phaser.GameObjects.GameObject[] = [];
 
     const overlay = this.add.rectangle(480, 270, 960, 540, 0x000000, 0.75);
@@ -136,8 +151,9 @@ export class MenuScene extends Phaser.Scene {
     for (let day = 1; day <= 7; day++) {
       const reward = getDailyRewardForDay(day);
       const x = startX + (day - 1) * (boxSize + gap);
-      const isPast = day < currentDay;
-      const isToday = day === currentDay;
+      // Nếu hôm nay đã claim, ô currentDay tính là "đã qua" (✓) luôn thay vì viền highlight "today".
+      const isPast = day < currentDay || (day === currentDay && alreadyClaimedToday);
+      const isToday = day === currentDay && !alreadyClaimedToday;
       const isSpecial = day === 7;
 
       const bg = this.add.rectangle(x, y, boxSize, boxSize, isSpecial ? 0x4a1b0c : 0x111827, 1)
@@ -154,6 +170,16 @@ export class MenuScene extends Phaser.Scene {
         // Ô Day 7 luôn có icon ★ riêng biệt để phân biệt (special unlock), dù đã qua hay chưa.
         elements.push(this.add.text(x, y + 21, "★", { fontSize: "16px", color: "#d85a30", fontStyle: "bold" }).setOrigin(0.5));
       }
+    }
+
+    if (alreadyClaimedToday) {
+      // Xem lại streak, không còn gì để nhận hôm nay -> chỉ có nút Đóng, không gọi lại claimLoginReward().
+      const closeButton = this.add.text(480, 355, "[ Đóng ]", {
+        fontSize: "18px", color: "#8be9fd", fontStyle: "bold"
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      elements.push(closeButton);
+      closeButton.on("pointerdown", () => elements.forEach((el) => el.destroy()));
+      return;
     }
 
     const claimButton = this.add.text(480, 355, "[ Nhận thưởng ]", {

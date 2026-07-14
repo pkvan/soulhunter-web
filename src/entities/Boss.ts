@@ -46,6 +46,23 @@ export class Boss {
   public roarMoveSpeedBuff = 0;
   public roarDamageBuff = 0;
 
+  public pendingFreezePulse = false;
+  public freezePulseRadius = 0;
+  public freezePulseSlowFactor = 0;
+  public freezePulseDurationMs = 0;
+
+  public pendingPoisonCloud = false;
+  public poisonCloudRadius = 0;
+  public poisonCloudTickDamage = 0;
+  public poisonCloudTickIntervalMs = 0;
+  public poisonCloudDurationMs = 0;
+
+  public pendingClone = false;
+  public cloneHp = 0;
+  public cloneDamage = 0;
+  public cloneMoveSpeed = 0;
+  public cloneDurationMs = 0;
+
   /** Damage va chạm khi đang trong pha "active" của dash/charge — null = BossSystem dùng damage va chạm thường. */
   public activeContactDamage: number | null = null;
 
@@ -56,6 +73,11 @@ export class Boss {
   private dashAngle = 0;
   private slamTelegraphGraphics?: Phaser.GameObjects.Graphics;
 
+  // heal_self là passive theo ngưỡng HP, KHÔNG theo cooldown xoay vòng như các skill khác — tách riêng
+  // khỏi mảng `skills` (tryStartSkill) ngay từ constructor, tự kiểm tra trong takeDamage().
+  private healSelfDef: BossSkillDef | undefined;
+  private healSelfUsed = false;
+
   constructor(private scene: Phaser.Scene, x: number, y: number, bossDef: BossDef) {
     this.id = bossDef.id;
     this.name = bossDef.name;
@@ -65,9 +87,13 @@ export class Boss {
     this.currentHp = this.maxHp;
     this.moveSpeed = bossDef.moveSpeed;
 
-    this.skills = bossDef.skillIds
+    const resolvedSkillDefs = bossDef.skillIds
       .map((skillId) => bossSkills.find((s) => s.id === skillId))
-      .filter((def): def is BossSkillDef => def !== undefined)
+      .filter((def): def is BossSkillDef => def !== undefined);
+
+    this.healSelfDef = resolvedSkillDefs.find((def) => def.type === "heal_self");
+    this.skills = resolvedSkillDefs
+      .filter((def) => def.type !== "heal_self")
       .map((def) => ({ def, lastUsedAt: 0 }));
 
     this.sprite = scene.physics.add.sprite(x, y, "boss_placeholder");
@@ -79,7 +105,7 @@ export class Boss {
     switch (this.phase) {
       case "chase":
         this.moveToward(playerX, playerY, this.moveSpeed);
-        this.tryStartSkill(time);
+        this.tryStartSkill(time, playerX, playerY);
         break;
 
       case "telegraph": {
@@ -105,10 +131,35 @@ export class Boss {
     }
   }
 
-  /** true = chết (currentHp <= 0), dùng chung style với Enemy.takeDamage. */
+  /** true = chết (currentHp <= 0), dùng chung style với Enemy.takeDamage. Kiểm tra heal_self NGAY SAU khi trừ máu — chỉ kích hoạt đúng 1 lần/trận (healSelfUsed), tránh vòng lặp không thể hạ gục. */
   takeDamage(amount: number): boolean {
     this.currentHp -= amount;
+    this.tryTriggerHealSelf();
     return this.currentHp <= 0;
+  }
+
+  private tryTriggerHealSelf(): void {
+    if (!this.healSelfDef || this.healSelfUsed || this.currentHp <= 0) return;
+    const threshold = this.healSelfDef.hpThreshold ?? 0.3;
+    if (this.currentHp / this.maxHp > threshold) return;
+
+    this.healSelfUsed = true;
+    const healAmount = this.maxHp * (this.healSelfDef.healPercent ?? 0.25);
+    this.currentHp = Math.min(this.maxHp, this.currentHp + healAmount);
+    this.spawnHealFlash();
+  }
+
+  /** Vòng sáng xanh lá bùng lên quanh boss lúc heal_self kích hoạt — phản hồi hình ảnh rõ ràng cho 1 sự kiện chỉ xảy ra đúng 1 lần/trận. */
+  private spawnHealFlash(): void {
+    const flash = this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0x4ade80, 0.6).setDepth(5);
+    this.scene.tweens.add({
+      targets: flash,
+      radius: 70,
+      alpha: 0,
+      duration: 500,
+      ease: "Sine.easeOut",
+      onComplete: () => flash.destroy()
+    });
   }
 
   destroy(): void {
@@ -132,15 +183,15 @@ export class Boss {
     this.destroySlamTelegraphGraphics();
   }
 
-  private tryStartSkill(time: number): void {
+  private tryStartSkill(time: number, playerX: number, playerY: number): void {
     for (const skillState of this.skills) {
       if (time - skillState.lastUsedAt < skillState.def.cooldownMs) continue;
-      this.startSkill(skillState, time);
+      this.startSkill(skillState, time, playerX, playerY);
       return;
     }
   }
 
-  private startSkill(skillState: SkillState, time: number): void {
+  private startSkill(skillState: SkillState, time: number, playerX: number, playerY: number): void {
     skillState.lastUsedAt = time;
     const def = skillState.def;
 
@@ -155,7 +206,16 @@ export class Boss {
         this.activeSkill = skillState;
         this.telegraphStartedAt = time;
         this.phase = "telegraph";
-        this.drawSlamTelegraphCircle(def.radius ?? 0);
+        this.drawTelegraphCircle(this.sprite.x, this.sprite.y, def.radius ?? 0);
+        break;
+      case "meteor":
+        // Vòng cảnh báo cố định NGAY tại vị trí player lúc bắt đầu cast (không đuổi theo player suốt telegraph) — player phải né ra khỏi đó.
+        this.activeSkill = skillState;
+        this.telegraphStartedAt = time;
+        this.phase = "telegraph";
+        this.slamCenterX = playerX;
+        this.slamCenterY = playerY;
+        this.drawTelegraphCircle(playerX, playerY, def.radius ?? 0);
         break;
       case "summon":
         // Không có telegraph/active phase — thực hiện ngay, BossSystem đọc cờ này mỗi frame rồi tự reset về false.
@@ -168,6 +228,33 @@ export class Boss {
         this.roarDurationMs = def.durationMs ?? 0;
         this.roarMoveSpeedBuff = def.moveSpeedBuff ?? 0;
         this.roarDamageBuff = def.damageBuff ?? 0;
+        break;
+      case "teleport":
+        // Tức thời, không telegraph — tự dịch chuyển sprite trong startSkill(), boss vẫn ở phase "chase".
+        this.executeTeleport(def.radius ?? 240, playerX, playerY);
+        break;
+      case "freeze_pulse":
+        this.pendingFreezePulse = true; // BossSystem đọc cờ này mỗi frame rồi tự reset về false
+        this.freezePulseRadius = def.radius ?? 0;
+        this.freezePulseSlowFactor = def.slowFactor ?? 0;
+        this.freezePulseDurationMs = def.durationMs ?? 0;
+        this.spawnFreezePulseRing(def.radius ?? 0);
+        break;
+      case "poison_cloud":
+        // Thả tại vị trí boss lúc cast — BossSystem đọc cờ này mỗi frame, tự tạo vùng DOT sống trong poisonCloudDurationMs (không phải hiệu ứng tức thời như summon/roar).
+        this.pendingPoisonCloud = true;
+        this.poisonCloudRadius = def.radius ?? 0;
+        this.poisonCloudTickDamage = def.damage ?? 0;
+        this.poisonCloudTickIntervalMs = def.tickIntervalMs ?? 1000;
+        this.poisonCloudDurationMs = def.durationMs ?? 0;
+        break;
+      case "clone":
+        // BossSystem đọc cờ này, tự spawn 1 Enemy từ PoolManager với EnemyDef tổng hợp tại runtime (tái dùng toàn bộ AI/damage/collision có sẵn của Enemy thay vì viết entity mới).
+        this.pendingClone = true;
+        this.cloneHp = def.cloneHp ?? 0;
+        this.cloneDamage = def.cloneDamage ?? 0;
+        this.cloneMoveSpeed = def.cloneMoveSpeed ?? 0;
+        this.cloneDurationMs = def.durationMs ?? 0;
         break;
     }
   }
@@ -190,7 +277,52 @@ export class Boss {
       this.pendingSlamDamage = true; // BossSystem đọc cờ này mỗi frame rồi tự reset về false
       this.destroySlamTelegraphGraphics();
       this.finishSkill();
+    } else if (skill.type === "meteor") {
+      // slamCenterX/Y đã được chốt lúc startSkill() (vị trí player NGAY lúc bắt đầu cast) — không đọc lại playerX/Y ở đây.
+      this.slamRadius = skill.radius ?? 0;
+      this.slamDamage = skill.damage ?? 0;
+      this.pendingSlamDamage = true; // tái dùng đúng cờ AOE của ground_slam — BossSystem không cần biết đây là meteor hay slam
+      this.destroySlamTelegraphGraphics();
+      this.finishSkill();
     }
+  }
+
+  /** Dịch chuyển tức thời tới 1 điểm ngẫu nhiên quanh player (không quá sát để tránh dính luôn), kèm flash lúc biến mất/xuất hiện. */
+  private executeTeleport(radius: number, playerX: number, playerY: number): void {
+    this.spawnTeleportFlash(this.sprite.x, this.sprite.y);
+
+    const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    const dist = Phaser.Math.FloatBetween(radius * 0.4, radius);
+    this.sprite.setPosition(playerX + Math.cos(angle) * dist, playerY + Math.sin(angle) * dist);
+
+    this.spawnTeleportFlash(this.sprite.x, this.sprite.y);
+  }
+
+  /** Vòng sáng bùng lên rồi tan biến — dùng chung cho lúc boss biến mất VÀ lúc xuất hiện trở lại. */
+  private spawnTeleportFlash(x: number, y: number): void {
+    const flash = this.scene.add.circle(x, y, 24, 0xffffff, 0.9).setDepth(5);
+    this.scene.tweens.add({
+      targets: flash,
+      radius: 46,
+      alpha: 0,
+      duration: 250,
+      ease: "Sine.easeOut",
+      onComplete: () => flash.destroy()
+    });
+  }
+
+  /** Vòng xung mở rộng từ tâm boss ra tới đúng bán kính freeze_pulse rồi tan biến — chỉ hiệu ứng hình ảnh, phần làm chậm player do BossSystem xử lý (đọc pendingFreezePulse). */
+  private spawnFreezePulseRing(radius: number): void {
+    const ring = this.scene.add.circle(this.sprite.x, this.sprite.y, 4, 0x7dd3fc, 0).setDepth(4);
+    ring.setStrokeStyle(3, 0x7dd3fc, 0.9);
+    this.scene.tweens.add({
+      targets: ring,
+      radius,
+      alpha: 0,
+      duration: 400,
+      ease: "Sine.easeOut",
+      onComplete: () => ring.destroy()
+    });
   }
 
   private finishSkill(): void {
@@ -210,12 +342,12 @@ export class Boss {
     this.sprite.setTint(flicker ? 0xffffff : 0xff2222);
   }
 
-  /** Vòng tròn viền đỏ báo trước vùng Ground Slam sắp nổ — vẽ 1 lần tại vị trí boss lúc bắt đầu telegraph (boss đứng yên suốt telegraph). */
-  private drawSlamTelegraphCircle(radius: number): void {
+  /** Vòng tròn viền đỏ báo trước vùng AOE sắp nổ (Ground Slam tại vị trí boss, Meteor tại vị trí player lúc cast) — vẽ 1 lần lúc bắt đầu telegraph. */
+  private drawTelegraphCircle(x: number, y: number, radius: number): void {
     this.destroySlamTelegraphGraphics();
     const graphics = this.scene.add.graphics();
     graphics.lineStyle(3, 0xff2222, 0.8);
-    graphics.strokeCircle(this.sprite.x, this.sprite.y, radius);
+    graphics.strokeCircle(x, y, radius);
     this.slamTelegraphGraphics = graphics;
   }
 

@@ -97,16 +97,23 @@ export interface BossDef {
 export interface BossSkillDef {
   id: string;
   name: string; // tên hiển thị (vd "Lao Tới") — dùng cho Collection tab Bosses, xem CollectionManager.getBossEntries()
-  type: "dash" | "charge" | "ground_slam" | "summon" | "roar";
+  type: "dash" | "charge" | "ground_slam" | "summon" | "roar" | "teleport" | "meteor" | "poison_cloud" | "heal_self" | "clone" | "freeze_pulse";
   cooldownMs: number;
-  telegraphMs?: number; // dash/charge/ground_slam
+  telegraphMs?: number; // dash/charge/ground_slam/meteor
   speed?: number; // dash/charge
-  durationMs?: number; // dash/charge (thời lượng lao), roar (thời lượng buff)
-  damage?: number; // dash/charge/ground_slam
-  radius?: number; // ground_slam/roar
+  durationMs?: number; // dash/charge (thời lượng lao), roar (thời lượng buff), poison_cloud (thời gian tồn tại mây), clone (thời gian sống), freeze_pulse (thời gian làm chậm player)
+  damage?: number; // dash/charge/ground_slam/meteor, poison_cloud (damage mỗi tick)
+  radius?: number; // ground_slam/roar/meteor (AOE), teleport (bán kính dịch chuyển quanh player), poison_cloud (bán kính mây), freeze_pulse (bán kính xung)
   count?: number; // summon
   moveSpeedBuff?: number; // roar, vd 0.3 = +30%
   damageBuff?: number; // roar, vd 0.2 = +20%
+  tickIntervalMs?: number; // poison_cloud — khoảng cách giữa 2 lần tick damage
+  hpThreshold?: number; // heal_self, vd 0.3 = kích hoạt khi HP <= 30% maxHp
+  healPercent?: number; // heal_self, vd 0.25 = hồi 25% maxHp
+  cloneHp?: number; // clone
+  cloneDamage?: number; // clone
+  cloneMoveSpeed?: number; // clone
+  slowFactor?: number; // freeze_pulse, vd 0.5 = player chậm đi 50% trong durationMs nếu trúng
 }
 
 /** 1 map trong bản đồ đảo liên kết (data/maps.json, xem MapSelectScene) — mỗi map có bộ quái + boss cuối riêng. */
@@ -116,7 +123,8 @@ export interface MapDef {
   order: number;
   theme_color: string; // hex string, dùng làm màu nền node trên MapSelectScene
   enemyDataFile: string; // tên file trong src/data/ (vd "enemies.json") — resolve qua utils/MapData.ts, không import động trực tiếp
-  bossId: string; // tham chiếu bosses.json — boss cuối cùng (luôn isFinalBoss) của map này
+  bossId: string; // tham chiếu bosses.json — boss CUỐI (luôn isFinalBoss: true) của map này, kết thúc map/kích hoạt Victory cinematic
+  midBossId?: string; // tham chiếu bosses.json — boss GIỮA map (isFinalBoss: false, giống Loot Chest boss thường), spawn sớm hơn bossId trong cùng ván. Forest/Graveyard không có (chỉ 1 boss/map)
   difficultyMultiplier: number; // nhân thêm vào difficultyMultiplier gốc của SpawnSystem, map càng về sau càng khó hơn
   unlockRequires: string | null; // id map phải clear trước, null = mở sẵn từ đầu
 }

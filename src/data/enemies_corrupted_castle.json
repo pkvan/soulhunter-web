@@ -1,0 +1,7 @@
+[
+  { "id": "corrupted_knight", "name": "Corrupted Knight", "hp": 40, "moveSpeed": 47, "damage": 14, "soulValue": 3, "flag": "ground", "tintColor": "0x4c1d95", "description": "Hiệp sĩ tha hóa bọc giáp nặng, máu dày và sát thương nặng như Orc." },
+  { "id": "cursed_skeleton", "name": "Cursed Skeleton", "hp": 13, "moveSpeed": 81, "damage": 9, "soulValue": 2, "flag": "ground", "tintColor": "0x6b21a8", "description": "Bộ xương bị nguyền rủa, tốc độ và sát thương tương đương Skeleton thường." },
+  { "id": "dark_ghost", "name": "Dark Ghost", "hp": 11, "moveSpeed": 73, "damage": 7, "soulValue": 2, "flag": "phasing", "tintColor": "0x581c87", "alpha": 0.7, "meleeDodgeChance": 0.4, "description": "Linh hồn bóng tối trong suốt, né được đòn cận chiến." },
+  { "id": "gargoyle", "name": "Gargoyle", "hp": 9, "moveSpeed": 120, "damage": 6, "soulValue": 1, "flag": "flying", "tintColor": "0x374151", "description": "Tượng đá canh lâu đài biết bay, lượn thẳng nhưng bất ngờ lao xuống tấn công." },
+  { "id": "vampire_bat", "name": "Vampire Bat", "hp": 6, "moveSpeed": 150, "damage": 4, "soulValue": 1, "flag": "flying", "tintColor": "0x7f1d1d", "movementPattern": "zigzag", "description": "Dơi hút máu bay ngoằn ngoèo tốc độ cao, máu mỏng khó nhắm." }
+]
