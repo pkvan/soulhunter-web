@@ -12,6 +12,18 @@
     "description": "Đánh cận chiến hình quạt trước mặt player, đổi lại +30 Max HP khi trang bị"
   },
   {
+    "id": "bow",
+    "name": "Bow",
+    "type": "projectile_straight",
+    "baseDamage": 15,
+    "baseCooldownMs": 700,
+    "baseSpeed": 300,
+    "maxLevel": 8,
+    "color": "0x8b5a2b",
+    "rarity": "common",
+    "description": "Bắn mũi tên thẳng theo hướng gần nhất, tốc độ bắn nhanh"
+  },
+  {
     "id": "fireball",
     "name": "Fireball",
     "type": "projectile_straight",
@@ -64,6 +76,19 @@
     "color": "0xc98a3b",
     "rarity": "rare",
     "description": "Bay ra tối đa X khoảng cách rồi quay lại player"
+  },
+  {
+    "id": "triple_throw",
+    "name": "Triple Throw",
+    "type": "projectile_straight",
+    "baseDamage": 8,
+    "baseCooldownMs": 1200,
+    "baseSpeed": 240,
+    "maxDistance": 480,
+    "maxLevel": 8,
+    "color": "0x9ca3af",
+    "rarity": "rare",
+    "description": "Ném 3 dao tỏa hình quạt về phía quái gần nhất, bay xa rồi biến mất"
   },
   {
     "id": "holy_javelin",

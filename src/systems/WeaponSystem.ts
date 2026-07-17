@@ -90,6 +90,7 @@ export class WeaponSystem {
         const range = baseRange * rangeMultiplier;
         const slashColor = def.slashColor !== undefined ? Number(def.slashColor) : 0xf5f5f5;
         this.drawSwordSlash(range, slashColor);
+        if (def.id === "sword") this.player.playAttackAnimation();
 
         const hitEnemies: Enemy[] = [];
         for (const enemy of this.poolManager.getAllActiveEnemies()) {
@@ -124,20 +125,52 @@ export class WeaponSystem {
       case "projectile_return": {
         const target = this.findNearestTarget();
         if (!target) break;
-        const baseAngle = Phaser.Math.Angle.Between(
-          this.player.sprite.x, this.player.sprite.y,
-          target.x, target.y
-        );
+        // Góc bắn thật lúc BẮT ĐẦU đòn đánh — dùng để chọn animation Attack1 theo 1 trong 4 hướng gần nhất
+        // (xem Player.playAttackAnimation aimAngleRad), KHÔNG dùng để bắn (bắn dùng góc live lúc release, xem spawnShots).
+        const aimAngleAtStart = Phaser.Math.Angle.Between(this.player.sprite.x, this.player.sprite.y, target.x, target.y);
+
         // fireball_size upgrade (appliesTo "fireball"): scale hình ảnh, KHÔNG mở rộng PROJECTILE_HIT_RADIUS (giữ đơn giản, đúng mô tả "tăng kích thước").
         const scaleMultiplier = def.id === "fireball" ? 1 + (this.player.stats.fireballSizeMultiplier ?? 0) : 1;
         // projectile_plus upgrade (projectileCount, không appliesTo -> áp mọi vũ khí loại projectile): bắn thêm N viên dàn quạt quanh hướng target gốc.
         const totalShots = 1 + (this.player.stats.projectileCount ?? 0);
         const spreadRad = Phaser.Math.DegToRad(GAMEPLAY.PROJECTILE_PLUS_SPREAD_DEG);
-        for (let i = 0; i < totalShots; i++) {
-          const projectile = this.poolManager.getProjectile();
-          if (!projectile) break; // pool hết chỗ, bỏ qua phần còn lại của loạt bắn này
-          const angle = baseAngle + (i - (totalShots - 1) / 2) * spreadRad;
-          projectile.fire(this.player.sprite.x, this.player.sprite.y, angle, def, damage, false, isCrit, scaleMultiplier);
+
+        // Tách thành closure để Bow có thể trì hoãn bắn thật tới đúng frame mũi tên rời cung (xem playAttackAnimation
+        // onRelease) — tính lại target/góc bắn NGAY LÚC bắn (không dùng lại giá trị lúc bắt đầu animation) vì
+        // player/quái có thể đã di chuyển trong lúc animation đang chạy.
+        const spawnShots = () => {
+          const liveTarget = this.findNearestTarget() ?? target;
+          const baseAngle = Phaser.Math.Angle.Between(this.player.sprite.x, this.player.sprite.y, liveTarget.x, liveTarget.y);
+          for (let i = 0; i < totalShots; i++) {
+            const projectile = this.poolManager.getProjectile();
+            if (!projectile) break; // pool hết chỗ, bỏ qua phần còn lại của loạt bắn này
+            const angle = baseAngle + (i - (totalShots - 1) / 2) * spreadRad;
+            projectile.fire(this.player.sprite.x, this.player.sprite.y, angle, def, damage, false, isCrit, scaleMultiplier);
+          }
+        };
+
+        if (def.id === "bow") {
+          // aimAngleAtStart quy đổi sang 1 trong 4 hướng animation bên trong Player — mũi tên thật vẫn bay đúng
+          // góc thật (spawnShots tính lại góc live), animation nhân vật không bị ép đúng góc atan2.
+          this.player.playAttackAnimation(spawnShots, aimAngleAtStart); // đợi đúng frame release trong Attack1 mới thực sự bắn
+        } else if (def.id === "triple_throw") {
+          // Assassin — Triple Throw: 3 dao bắn CÙNG LÚC (không đợi frame release như Bow) — tia trung tâm nhắm
+          // ĐÚNG quái gần nhất (aimAngleAtStart, atan2 thật — KHÔNG dùng player.currentDirection), 2 tia còn lại
+          // lệch ±27° quanh tia trung tâm. Chỉ đơn giản bay thẳng rồi despawn (xem "projectile_straight" ở
+          // Projectile.ts — không còn state "returning"/quay lại player như bản trước).
+          // aimAngleAtStart cũng được truyền vào playAttackAnimation để animation Attack1 XOAY ĐÚNG hướng đang
+          // ném (giống Bow) — trước đây gọi playAttackAnimation() không tham số nên animation vẫn hiển thị theo
+          // hướng di chuyển WASD gần nhất (currentDirection cũ), tạo cảm giác sai là "dao bay theo hướng nhìn".
+          const spreadRad3 = Phaser.Math.DegToRad(27); // lệch ±27° so với tia trung tâm — trong khoảng 25-30° yêu cầu
+          const angles3 = [aimAngleAtStart - spreadRad3, aimAngleAtStart, aimAngleAtStart + spreadRad3];
+          for (const angle of angles3) {
+            const projectile = this.poolManager.getProjectile();
+            if (!projectile) break; // pool hết chỗ, bỏ qua các dao còn lại của loạt ném này
+            projectile.fire(this.player.sprite.x, this.player.sprite.y, angle, def, damage, false, isCrit);
+          }
+          this.player.playAttackAnimation(undefined, aimAngleAtStart);
+        } else {
+          spawnShots();
         }
         break;
       }

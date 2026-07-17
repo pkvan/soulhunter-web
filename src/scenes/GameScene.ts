@@ -22,6 +22,7 @@ import soulCorruptionData from "@data/soulCorruption.json";
 import { DailyChallengeDef, EliteConfig, SoulCorruptionConfig } from "@types/index";
 import { calculateCoinEarned } from "@utils/CoinFormula";
 import { hasClaimedDailyChallengeToday, markDailyChallengeClaimedToday } from "@utils/SaveData";
+import { loadCharacterSprites } from "@utils/CharacterSpriteLoader";
 import { getMapById, getEnemyDataForMap, markMapCleared, getNextMap } from "@utils/MapData";
 import { GAMEPLAY } from "@config/GameConfig";
 import bossesData from "@data/bosses.json";
@@ -94,8 +95,24 @@ export class GameScene extends Phaser.Scene {
   private corruptionActiveUntilTime = -Infinity; // "time" clock (giống SpawnSystem), xem activateCorruption()
   private corruptionBonusApplied = false; // tránh cộng damageMultiplier lặp lại nếu nhặt nhiều Dark Soul liên tiếp trong lúc buff đang active
 
+  private pendingCharacterId = "hunter"; // đọc ở init(), dùng lại ở preload() vì Phaser KHÔNG truyền data vào preload()
+
   constructor() {
     super("GameScene");
+  }
+
+  /** Phaser gọi init(data) TRƯỚC preload() (và preload() không nhận data trực tiếp) — lưu lại characterId để preload() dùng. */
+  init(data: GameSceneData): void {
+    this.pendingCharacterId = data.characterId ?? "hunter";
+  }
+
+  /**
+   * Người chơi có thể đổi nhân vật sau khi BootScene đã chạy (không reload trang) — load lại đúng bộ sprite của
+   * nhân vật đang chọn CHO LƯỢT CHƠI NÀY trước khi create() dựng Player. loadCharacterSprites() tự bỏ qua
+   * texture đã có sẵn (namespace theo characterId nên nhân vật khác không bị đè).
+   */
+  preload(): void {
+    loadCharacterSprites(this, this.pendingCharacterId);
   }
 
   create(data: GameSceneData): void {

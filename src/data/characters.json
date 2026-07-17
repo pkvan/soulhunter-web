@@ -4,7 +4,7 @@
     "name": "Soul Hunter",
     "baseHp": 100,
     "baseMoveSpeed": 160,
-    "startingWeapon": "sword",
+    "startingWeapon": "bow",
     "unlocked": true,
     "unlockCostCoin": 0
   },
@@ -40,7 +40,7 @@
     "name": "Assassin",
     "baseHp": 75,
     "baseMoveSpeed": 190,
-    "startingWeapon": "boomerang",
+    "startingWeapon": "triple_throw",
     "unlocked": false,
     "unlockCostCoin": 40
   }

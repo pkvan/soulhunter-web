@@ -24,6 +24,23 @@ export class Player {
   private soulCount = 0;
   private level = 1;
   private soulToNextLevel = 10;
+  public currentDirection: "up" | "down" | "left" | "right" = "down";
+  private isAttacking = false;
+  // State tracking cho updateMovementAnimation() — CHỈ gọi lại anims.play()/setTexture() khi 1 trong 2 giá trị
+  // này thực sự đổi so với lần trước, tránh gọi lại animation mỗi frame dù hướng/trạng thái không đổi (nguyên
+  // nhân gây chớp nháy). null = "cần áp lại animation ngay lần update() tới" — dùng lúc Attack1 vừa kết thúc để
+  // ép quay lại đúng Run/Idle dù hướng+trạng thái di chuyển giống hệt lúc trước khi bắt đầu đòn đánh.
+  private lastDirection: "up" | "down" | "left" | "right" | null = null;
+  private lastMovementState: "moving" | "idle" | null = null;
+  // Frame (0-based, khớp đúng file PNG gốc) lúc mũi tên rời cung trong animation Attack1 — xác định bằng cách
+  // xem trực tiếp từng frame attack1_<hướng>.png: frame 2 dây cung còn kéo căng, frame 3 dây đã bung/mũi tên
+  // tách khỏi cung (rõ nhất ở "left": mũi tên hiện hẳn ra phía trước cung). Cả 4 hướng đều trùng tại frame 3.
+  private readonly attackReleaseFrame: Record<"up" | "down" | "left" | "right", number> = {
+    up: 3,
+    down: 3,
+    left: 3,
+    right: 3
+  };
   private keys: {
     W: Phaser.Input.Keyboard.Key;
     A: Phaser.Input.Keyboard.Key;
@@ -41,9 +58,33 @@ export class Player {
     const def = characters.find((c) => c.id === characterId) ?? characters[0];
     this.characterId = def.id;
 
-    // TODO: thay "player_placeholder" bằng texture key thật sau khi có asset
-    this.sprite = scene.physics.add.sprite(x, y, "player_placeholder");
+    this.createAnimations();
+
+    // Ưu tiên Run rồi tới Attack cho frame đứng ban đầu — nhân vật có thể CHƯA có Run (vd Assassin/Mage lúc này),
+    // fallback cuối cùng là player_placeholder (hình vuông màu, xem BootScene) nếu không có sprite thật nào.
+    const initialRunKey = this.runKey("down");
+    const initialAttackKey = this.attackKey("down");
+    let initialTexture = "player_placeholder";
+    let hasInitialFrame = false;
+    if (this.scene.textures.exists(initialRunKey)) {
+      initialTexture = initialRunKey;
+      hasInitialFrame = true;
+    } else if (this.scene.textures.exists(initialAttackKey)) {
+      initialTexture = initialAttackKey;
+      hasInitialFrame = true;
+    } else {
+      console.warn(`[Player] characterId="${this.characterId}" không có sprite Run/Attack nào — dùng player_placeholder.`);
+    }
+    this.sprite = hasInitialFrame
+      ? scene.physics.add.sprite(x, y, initialTexture, 0)
+      : scene.physics.add.sprite(x, y, initialTexture);
+    // Neo giữa-đáy: Run/Attack1 đều dùng chung khung 96x110, đổi animation qua lại không bị lệch chân nhân vật.
+    this.sprite.setOrigin(0.5, 1);
     this.sprite.setCollideWorldBounds(false); // map vô tận, không chặn biên
+    // Frame 96x110 nhưng nhân vật thật chỉ chiếm khoảng giữa khung hình (đã đo bbox qua Pillow) — thu nhỏ hitbox
+    // vật lý (dùng cho wall collider) để khớp đúng bóng nhân vật thay vì để nguyên cả khung hình trong suốt.
+    this.sprite.body!.setSize(28, 40);
+    this.sprite.body!.setOffset(34, 64);
 
     this.keys = this.scene.input.keyboard!.addKeys("W,A,S,D") as typeof this.keys;
 
@@ -70,6 +111,45 @@ export class Player {
 
     this.equippedWeapons.push({ weaponId: def.startingWeapon, level: 1 });
     this.syncSwordHpBonus();
+  }
+
+  /** Key texture/animation namespace theo characterId (vd "run_hunter_down") — nhiều nhân vật cùng tồn tại trong TextureManager mà không đè lên nhau khi đổi nhân vật giữa phiên, xem CharacterSpriteLoader. */
+  private runKey(dir: "up" | "down" | "left" | "right"): string {
+    return `run_${this.characterId}_${dir}`;
+  }
+
+  private attackKey(dir: "up" | "down" | "left" | "right"): string {
+    return `attack_${this.characterId}_${dir}`;
+  }
+
+  /**
+   * Tạo animation Run/Attack1 4 hướng 1 lần cho ĐÚNG characterId hiện tại (guard bằng anims.exists — Player
+   * khởi tạo lại mỗi ván nhưng AnimationManager dùng chung toàn Scene Manager). Chỉ tạo animation cho hướng nào
+   * CÓ texture tương ứng đã load — nhân vật chưa có Run/Attack (xem CharacterSpriteLoader) sẽ đơn giản không có
+   * animation đó, updateMovementAnimation()/playAttackAnimation() tự kiểm tra và fallback placeholder.
+   */
+  private createAnimations(): void {
+    const directions: Array<"up" | "down" | "left" | "right"> = ["up", "down", "left", "right"];
+    for (const dir of directions) {
+      const runKey = this.runKey(dir);
+      if (this.scene.textures.exists(runKey) && !this.scene.anims.exists(runKey)) {
+        this.scene.anims.create({
+          key: runKey,
+          frames: this.scene.anims.generateFrameNumbers(runKey, { start: 0, end: 7 }),
+          frameRate: 11,
+          repeat: -1
+        });
+      }
+      const attackKey = this.attackKey(dir);
+      if (this.scene.textures.exists(attackKey) && !this.scene.anims.exists(attackKey)) {
+        this.scene.anims.create({
+          key: attackKey,
+          frames: this.scene.anims.generateFrameNumbers(attackKey, { start: 0, end: 7 }),
+          frameRate: 15,
+          repeat: 0
+        });
+      }
+    }
   }
 
   /**
@@ -111,6 +191,7 @@ export class Player {
     }
 
     this.sprite.setVelocity(vx * speed, vy * speed);
+    this.updateMovementAnimation(vx, vy);
 
     // hp_regen upgrade: hồi liên tục theo delta thay vì tick rời rạc mỗi giây — mượt hơn trên HUD, heal() đã tự clamp maxHp.
     if (this.stats.hpRegenPerSecond) this.heal(this.stats.hpRegenPerSecond * (delta / 1000));
@@ -153,6 +234,121 @@ export class Player {
       isBigHit ? GAMEPLAY.PLAYER_HIT_BIG_SHAKE_DURATION_MS : GAMEPLAY.PLAYER_HIT_SHAKE_DURATION_MS,
       isBigHit ? GAMEPLAY.PLAYER_HIT_BIG_SHAKE_INTENSITY : GAMEPLAY.PLAYER_HIT_SHAKE_INTENSITY
     );
+  }
+
+  /**
+   * Đổi animation Run theo hướng di chuyển WASD — không đè lên animation Attack1 đang chạy (xem playAttackAnimation()).
+   * CHỈ set lại animation/texture khi hướng HOẶC trạng thái di chuyển thực sự đổi so với lần gọi trước (lastDirection/
+   * lastMovementState) — gọi lại anims.play()/setTexture() mỗi frame dù không đổi gì từng gây chớp nháy, đặc biệt rõ
+   * với nhân vật CHƯA có sprite Run (Assassin): mỗi lần Attack1 (Triple Throw tự bắn) kết thúc, nhánh fallback dưới
+   * đây từng luôn set về "player_placeholder" (ô vuông xanh) bất kể đã ở trạng thái đó chưa, tạo cảm giác nhấp nháy
+   * qua lại với texture Attack thật mỗi chu kỳ cooldown.
+   */
+  private updateMovementAnimation(vx: number, vy: number): void {
+    if (this.isAttacking) return;
+
+    const moving = vx !== 0 || vy !== 0;
+    if (moving) {
+      // Ưu tiên trục ngang khi đi chéo (chỉ có 4 hướng sprite, không có hướng chéo riêng).
+      this.currentDirection = vx !== 0 ? (vx > 0 ? "right" : "left") : vy > 0 ? "down" : "up";
+    }
+    const movementState: "moving" | "idle" = moving ? "moving" : "idle";
+
+    // lastDirection/lastMovementState === null nghĩa là "vừa hết Attack1, bắt buộc áp lại animation ngay" (set ở
+    // animationcomplete trong playAttackAnimation()) — kể cả khi hướng+trạng thái giống hệt lúc trước lúc đánh.
+    const forceReapply = this.lastDirection === null || this.lastMovementState === null;
+    if (!forceReapply && this.lastDirection === this.currentDirection && this.lastMovementState === movementState) {
+      return;
+    }
+    this.lastDirection = this.currentDirection;
+    this.lastMovementState = movementState;
+
+    const runKey = this.runKey(this.currentDirection);
+    if (!this.scene.anims.exists(runKey)) {
+      // Chưa có sprite Run (vd Assassin lúc này) — ưu tiên đứng yên ở frame đầu Attack (đã load, hình nhân vật
+      // thật) thay vì rơi thẳng về player_placeholder — chỉ dùng placeholder khi KHÔNG có cả Attack lẫn Run.
+      const attackKey = this.attackKey(this.currentDirection);
+      if (this.scene.textures.exists(attackKey)) {
+        this.sprite.anims.stop();
+        this.sprite.setTexture(attackKey, 0);
+      } else {
+        this.sprite.setTexture("player_placeholder");
+      }
+      return;
+    }
+
+    if (moving) {
+      this.sprite.anims.play(runKey, true); // ignoreIfPlaying=true — không restart animation nếu đang chạy đúng key
+    } else {
+      // TODO: chưa có sprite Idle riêng — tạm dừng ở frame đầu Run làm Idle, thay bằng animation Idle thật khi có asset.
+      this.sprite.anims.stop();
+      this.sprite.setTexture(runKey, 0);
+    }
+  }
+
+  /**
+   * Gọi khi Sword/Bow tấn công (xem WeaponSystem.fire() case "melee"/"projectile_straight") — phát Attack1 theo
+   * hướng đang currentDirection, khóa animation di chuyển tới khi phát xong.
+   *
+   * `onRelease` (dùng cho Bow): thay vì bắn projectile ngay lúc gọi hàm này, WeaponSystem truyền vào 1 callback
+   * chỉ được gọi ĐÚNG lúc animation chạy tới frame mũi tên rời cung (attackReleaseFrame). Phaser CHỈ emit sự kiện
+   * `animationupdate` DÙNG CHUNG (không có biến thể `animationupdate-<key>` như `animationcomplete-<key>` —
+   * đã verify trực tiếp trong AnimationState.js: chỉ ANIMATION_COMPLETE mới emit thêm bản có key, ANIMATION_UPDATE
+   * thì không) nên phải lắng nghe event chung rồi tự lọc `anim.key === key`. `released` chặn gọi trùng nếu
+   * animationupdate bắn nhiều lần cho cùng 1 frame.
+   *
+   * `aimAngleRad` (dùng cho Bow): góc bắn thật (atan2 tới quái gần nhất) tại thời điểm BẮT ĐẦU đòn đánh — quy
+   * đổi sang 1 trong 4 hướng animation gần nhất (xem angleToDirection) để chọn đúng attack_up/down/left/right.
+   * Mũi tên thật KHÔNG bị bó theo hướng này — WeaponSystem tự bắn theo góc thật lúc release, animation nhân vật
+   * chỉ là xấp xỉ trực quan gần nhất trong 4 hướng có sẵn.
+   */
+  public playAttackAnimation(onRelease?: () => void, aimAngleRad?: number): void {
+    if (aimAngleRad !== undefined) this.currentDirection = this.angleToDirection(aimAngleRad);
+    const key = this.attackKey(this.currentDirection);
+
+    if (!this.scene.anims.exists(key)) {
+      // Nhân vật chưa có sprite Attack (vd Mage lúc này — xem CharacterSpriteLoader) — không có animation để
+      // đồng bộ frame release, nhưng vũ khí vẫn phải bắn ngay, không được im lặng mất tác dụng.
+      if (onRelease) onRelease();
+      return;
+    }
+
+    this.isAttacking = true;
+    this.sprite.anims.play(key, true);
+
+    let updateHandler: ((anim: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => void) | undefined;
+    if (onRelease) {
+      const releaseFrame = this.attackReleaseFrame[this.currentDirection];
+      let released = false;
+      updateHandler = (anim, frame) => {
+        if (released || anim.key !== key) return;
+        if (Number(frame.frame.name) === releaseFrame) {
+          released = true;
+          onRelease();
+        }
+      };
+      this.sprite.on("animationupdate", updateHandler);
+    }
+
+    this.sprite.once(`animationcomplete-${key}`, () => {
+      this.isAttacking = false;
+      if (updateHandler) this.sprite.off("animationupdate", updateHandler);
+      // updateMovementAnimation() chạy lại ngay ở update() frame kế tiếp, tự chọn đúng Run/Idle theo trạng thái
+      // di chuyển TẠI THỜI ĐIỂM ĐÓ (không phải lúc bắt đầu đòn đánh) — không set cứng animation ở đây.
+      // Reset về null để ép updateMovementAnimation() áp lại animation NGAY (bỏ qua guard lastDirection/
+      // lastMovementState) — texture hiện tại vẫn đang là frame cuối Attack1, phải chủ động quay lại Run/Idle.
+      this.lastDirection = null;
+      this.lastMovementState = null;
+    });
+  }
+
+  /** Quy đổi góc bắn (radian, quy ước Phaser: 0 = phải, dương = xuống) sang 1 trong 4 hướng animation gần nhất — chia 360° thành 4 phần tư 90° quanh trục right/down/left/up. */
+  private angleToDirection(angleRad: number): "up" | "down" | "left" | "right" {
+    const deg = Phaser.Math.RadToDeg(angleRad); // (-180, 180]
+    if (deg >= -45 && deg < 45) return "right";
+    if (deg >= 45 && deg < 135) return "down";
+    if (deg >= -135 && deg < -45) return "up";
+    return "left";
   }
 
   /** Gắn hiệu ứng làm chậm (vd Boss skill freeze_pulse) — factor=0.5 nghĩa là di chuyển chậm đi 50%. */

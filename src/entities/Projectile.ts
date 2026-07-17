@@ -6,12 +6,22 @@ import { WeaponDef } from "@types/index";
 type Target = Enemy | Boss;
 
 // Texture placeholder riêng theo từng vũ khí để phân biệt bằng mắt — xem BootScene.generatePlaceholderTextures()
+// (bow/triple_throw load qua CharacterSpriteLoader thay vì generate ở đây, nhưng vẫn cùng 1 bảng tra key).
 const PROJECTILE_TEXTURES: Record<string, string> = {
+  bow: "arrow_projectile",
+  triple_throw: "assasin_projectile",
   fireball: "projectile_fireball",
   ice_shard: "projectile_ice_shard",
   boomerang: "projectile_boomerang"
 };
 const BOOMERANG_SPIN_DEGREES_PER_UPDATE = 12;
+// Vũ khí cần xoay sprite đúng góc bay thật (đầu nhọn/lưỡi dao hướng đúng chiều di chuyển) thay vì quay tròn liên
+// tục (Boomerang) hoặc đứng yên góc 0 (Fireball/Ice Shard).
+const DIRECTIONAL_ROTATION_WEAPON_IDS = ["bow", "triple_throw"];
+// Triple Throw (Assassin) dùng type "projectile_straight" (bay thẳng, trúng/hết maxDistance thì despawn — KHÔNG
+// quay lại player) nhưng cần khoảng bay xa hơn mặc định maxTravelDistance của Fireball/Ice Shard/Holy Javelin —
+// đọc riêng weapon.maxDistance (480, xem weapons.json) thay vì maxTravelDistance chung cho các weaponId này.
+const CUSTOM_MAX_DISTANCE_WEAPON_IDS = ["triple_throw"];
 
 /**
  * Projectile dùng chung cho Fireball / Ice Shard / Boomerang / vũ khí fusion có projectile.
@@ -37,6 +47,8 @@ export class Projectile {
 
   constructor(private scene: Phaser.Scene) {
     this.sprite = scene.physics.add.sprite(-1000, -1000, "projectile_placeholder");
+    // Neo giữa tâm — bắt buộc để setAngle() (arrow_projectile) xoay đúng quanh tâm mũi tên, không lệch tâm bay.
+    this.sprite.setOrigin(0.5, 0.5);
     this.sprite.setActive(false).setVisible(false);
   }
 
@@ -56,7 +68,9 @@ export class Projectile {
     this.hitEnemies.clear();
 
     this.sprite.setTexture(PROJECTILE_TEXTURES[weapon.id] ?? "projectile_placeholder");
-    this.sprite.setAngle(0);
+    // Bow/Triple Throw: ảnh vẽ đầu nhọn/lưỡi dao quay phải theo trục ngang mặc định (angle 0), cần xoay đúng góc
+    // bay để hướng đúng chiều di chuyển — Fireball (tròn)/Ice Shard (thoi cân đối) không cần nên giữ nguyên angle 0.
+    this.sprite.setAngle(DIRECTIONAL_ROTATION_WEAPON_IDS.includes(weapon.id) ? Phaser.Math.RadToDeg(angleRad) : 0);
     this.sprite.setScale(scaleMultiplier); // fireball_size upgrade: chỉ WeaponSystem truyền khác 1 khi def.id === "fireball"
     this.sprite.setPosition(x, y);
     this.sprite.setActive(true).setVisible(true);
@@ -105,7 +119,8 @@ export class Projectile {
       }
     } else {
       const traveled = Phaser.Math.Distance.Between(this.originX, this.originY, this.sprite.x, this.sprite.y);
-      if (traveled > this.maxTravelDistance) {
+      const cutoff = CUSTOM_MAX_DISTANCE_WEAPON_IDS.includes(this.weaponId) ? this.maxDistance : this.maxTravelDistance;
+      if (traveled > cutoff) {
         this.despawn(); // bay ra quá xa mà không trúng gì -> despawn tránh leak
       }
     }

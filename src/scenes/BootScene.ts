@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import { loadCharacterSprites } from "@utils/CharacterSpriteLoader";
+import { getSelectedCharacterId } from "@utils/SaveData";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -6,9 +8,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // TODO: khi có asset thật, load sprite sheet / atlas ở đây thay cho texture generate trong create()
     // TODO: load JSON data (weapons, upgrades, fusions, enemies, characters) qua this.load.json nếu cần Phaser cache,
     // hiện tại các file trong src/data/ được import thẳng qua TypeScript nên chưa cần bước này.
+    // Load sẵn sprite của nhân vật đang chọn lúc khởi động app (persist qua SaveData). Nếu người chơi đổi nhân
+    // vật sau đó trong cùng phiên (không reload trang), GameScene.preload() tự load thêm bộ sprite mới —
+    // xem CharacterSpriteLoader (key namespace theo characterId nên không đè lẫn nhau).
+    loadCharacterSprites(this, getSelectedCharacterId());
   }
 
   create(): void {
@@ -19,7 +24,7 @@ export class BootScene extends Phaser.Scene {
   private generatePlaceholderTextures(): void {
     const graphics = this.make.graphics({ x: 0, y: 0 }, false);
 
-    graphics.fillStyle(0x4ade80, 1); // player: xanh lá
+    graphics.fillStyle(0x4ade80, 1); // player: xanh lá — fallback khi 1 nhân vật CHƯA có sprite Run/Attack thật (xem Player.ts)
     graphics.fillRect(0, 0, 32, 32);
     graphics.generateTexture("player_placeholder", 32, 32);
     graphics.clear();
